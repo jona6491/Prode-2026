@@ -1,0 +1,134 @@
+# 🚀 INSTRUCCIONES DE INSTALACIÓN
+# Prode Mundial 2026 - Sin tocar la terminal
+
+==============================================
+PASO 1 — CREAR CUENTA EN SUPABASE (base de datos)
+==============================================
+
+1. Ir a https://supabase.com
+2. Hacer clic en "Start your project"
+3. Registrarse con Google o GitHub
+4. Hacer clic en "New project"
+5. Ponerle un nombre: "prode-mundial-2026"
+6. Elegir una contraseña (guardala, aunque no la necesitarás frecuentemente)
+7. Región: South America (São Paulo) — la más cercana a Argentina
+8. Hacer clic en "Create new project" y esperar ~1 minuto
+
+==============================================
+PASO 2 — CREAR LAS TABLAS EN SUPABASE
+==============================================
+
+1. En Supabase, ir al menú izquierdo → "SQL Editor"
+2. Hacer clic en "New query"
+3. Abrir el archivo SUPABASE_SETUP.sql (está en la carpeta del proyecto)
+4. Copiar TODO el contenido y pegarlo en el editor de Supabase
+5. IMPORTANTE: Antes de ejecutar, cambiar en las últimas 2 líneas:
+   - 'ADMIN_MONOS' → la clave secreta que vas a usar para el grupo Monos
+   - 'ADMIN_ORO'   → la clave secreta para Oro Verde
+   (Ej: 'MONO_JEFE_99' y 'ORO_JEFE_99')
+6. Hacer clic en "Run" (botón verde)
+7. Debería decir "Success. No rows returned"
+
+==============================================
+PASO 3 — OBTENER LAS CLAVES DE SUPABASE
+==============================================
+
+1. En Supabase, ir a "Project Settings" (engranaje abajo a la izquierda)
+2. Hacer clic en "API"
+3. Copiar y guardar en un bloc de notas:
+   - "Project URL" (algo como: https://xxxxxxxxxxxx.supabase.co)
+   - "anon public" key (una clave larga que empieza con eyJ...)
+
+==============================================
+PASO 4 — SUBIR EL CÓDIGO A VERCEL
+==============================================
+
+1. Ir a https://vercel.com
+2. Registrarse (se puede con Google)
+3. En el dashboard, hacer clic en "Add New..." → "Project"
+4. Hacer clic en la pestaña "Upload" (no es necesario GitHub)
+   ⚠️ Si no ves "Upload", buscar "Deploy without Git"
+5. Arrastrar y soltar la carpeta "prode2026" completa
+6. Vercel detecta automáticamente que es un proyecto Next.js ✅
+7. Antes de hacer clic en "Deploy", ir a "Environment Variables" y agregar:
+   
+   Variable 1:
+   - Name:  NEXT_PUBLIC_SUPABASE_URL
+   - Value: [pegar el Project URL de Supabase]
+   
+   Variable 2:
+   - Name:  NEXT_PUBLIC_SUPABASE_ANON_KEY
+   - Value: [pegar la anon public key de Supabase]
+
+8. Hacer clic en "Deploy"
+9. Esperar ~2 minutos. Vercel te da una URL tipo: https://prode-mundial-2026.vercel.app
+
+==============================================
+PASO 5 — PROBAR Y COMPARTIR
+==============================================
+
+1. Abrir la URL que te dio Vercel
+2. Probar con la clave MON001 → crear un perfil de prueba
+3. Cargar algunos pronósticos y guardar
+4. Verificar en Supabase (Table Editor → players) que se guardó
+5. ¡Listo! Compartir el link con los grupos:
+   - Grupo Monos: la clave es MON001 (o la que pusiste)
+   - Grupo Oro Verde: la clave es ORO001
+
+==============================================
+USO DIARIO — CARGAR RESULTADOS REALES
+==============================================
+
+Para que el ranking sume puntos automáticamente cuando se jueguen los partidos:
+
+1. Ir a Supabase → Table Editor → match_results
+2. Hacer clic en "Insert row"
+3. Completar los campos:
+   - group_id: [el ID de tu grupo — lo ves en la tabla groups]
+   - match_key: clave del partido (ej: "A0" = Grupo A, partido 1)
+   - group_key: letra del grupo (ej: "A")
+   - match_index: número del partido en el grupo (0 al 5)
+   - local_team: nombre del equipo local
+   - visitor_team: nombre del equipo visitante
+   - goals_local: goles del local
+   - goals_visitor: goles del visitante
+4. Guardar — los puntos se actualizan automáticamente para todos
+
+Referencia de match_keys:
+  A0 = Grupo A partido 1 (México vs Sudáfrica, 11 Jun)
+  A1 = Grupo A partido 2 (Corea del Sur vs Rep. Checa, 11 Jun)
+  ...y así hasta L5
+
+==============================================
+ACCESO ADMIN DESDE LA APP
+==============================================
+
+1. Entrar a la app con la clave del grupo (ej: MON001)
+2. Una vez adentro, aparece la pestaña "🔧 Admin"
+3. Ingresar la clave admin que pusiste en el SQL
+4. Ver todos los jugadores registrados y si guardaron
+5. Exportar CSV con todos los datos
+
+==============================================
+PROBLEMAS FRECUENTES
+==============================================
+
+❓ "Clave incorrecta" al entrar
+→ Verificar que el SQL se ejecutó correctamente en Supabase
+→ Las claves son sensibles a mayúsculas (MON001 ≠ mon001)
+
+❓ La app carga pero no guarda nada
+→ Verificar que las variables de entorno en Vercel están bien escritas
+→ Sin espacios antes ni después de los valores
+
+❓ Quiero cambiar las claves de acceso
+→ En Supabase → Table Editor → groups → editar la fila
+
+❓ Quiero agregar un tercer grupo
+→ En Supabase → Table Editor → groups → Insert row
+
+==============================================
+CONTACTO / SOPORTE
+==============================================
+Esta app fue generada con asistencia de Claude (Anthropic).
+Para modificaciones o nuevas funciones, consultá con Claude en claude.ai
