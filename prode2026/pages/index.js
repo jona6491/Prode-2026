@@ -4,88 +4,83 @@ import { supabase } from '../lib/supabase'
 import PronosticosTab from '../components/PronosticosTab'
 import RankingTab from '../components/RankingTab'
 import ReglasTab from '../components/ReglasTab'
+import ResultadosTab from '../components/ResultadosTab'
 
 export default function Home() {
-  const [screen, setScreen] = useState('login')
+  const [screen, setScreen] = useState('loading')
   const [tab, setTab] = useState('pronosticos')
   const [clave, setClave] = useState('')
   const [nombre, setNombre] = useState('')
   const [equipo, setEquipo] = useState('')
   const [loginErr, setLoginErr] = useState('')
   const [loading, setLoading] = useState(false)
-  const [groupData, setGroupData] = useState(null)
   const [player, setPlayer] = useState(null)
+  const [keyId, setKeyId] = useState(null)
+  const [showAdminModal, setShowAdminModal] = useState(false)
+  const [adminUnlocked, setAdminUnlocked] = useState(false)
+  const [adminCode, setAdminCode] = useState('')
+  const [showAdminPanel, setShowAdminPanel] = useState(false)
 
   useEffect(() => {
     const savedPlayer = localStorage.getItem('prode_player')
-    const savedGroup = localStorage.getItem('prode_group')
-    if (savedPlayer && savedGroup) {
+    const savedKeyId = localStorage.getItem('prode_key_id')
+    if (savedPlayer && savedKeyId) {
       const p = JSON.parse(savedPlayer)
-      const g = JSON.parse(savedGroup)
       supabase.from('players').select('*').eq('id', p.id).single().then(({ data }) => {
-        if (data) {
-          setPlayer(data)
-          setGroupData(g)
-          setScreen('main')
-        } else {
-          localStorage.removeItem('prode_player')
-          localStorage.removeItem('prode_group')
-        }
+        if (data) { setPlayer(data); setKeyId(savedKeyId); setScreen('main') }
+        else { localStorage.removeItem('prode_player'); localStorage.removeItem('prode_key_id'); setScreen('login') }
       })
-    }
+    } else { setScreen('login') }
   }, [])
 
   async function handleLogin() {
-    if (!clave.trim()) return
-    setLoading(true)
-    setLoginErr('')
-    const { data, error } = await supabase
-      .from('groups')
-      .select('*')
-      .eq('access_code', clave.trim().toUpperCase())
-      .single()
+    const key = clave.trim().toUpperCase()
+    if (!key) return
+    setLoading(true); setLoginErr('')
+    const { data: keyData } = await supabase.from('player_keys').select('*').eq('access_key', key).single()
+    if (!keyData) { setLoginErr('Clave incorrecta. Pedísela al organizador.'); setLoading(false); return }
+    const { data: existingPlayer } = await supabase.from('players').select('*').eq('key_id', keyData.id).single()
     setLoading(false)
-    if (error || !data) {
-      setLoginErr('Clave incorrecta. Pedísela al organizador.')
-      return
-    }
-    setGroupData(data)
-    localStorage.setItem('prode_group', JSON.stringify(data))
-    setScreen('register')
+    if (existingPlayer) {
+      setPlayer(existingPlayer); setKeyId(keyData.id)
+      localStorage.setItem('prode_player', JSON.stringify(existingPlayer))
+      localStorage.setItem('prode_key_id', keyData.id)
+      setScreen('main')
+    } else { setKeyId(keyData.id); setScreen('register') }
   }
 
   async function handleRegister() {
     if (!nombre.trim() || !equipo.trim()) return
     setLoading(true)
-    const { data: existing } = await supabase
-      .from('players')
-      .select('id')
-      .eq('group_id', groupData.id)
-      .eq('team_name', equipo.trim())
-    if (existing && existing.length > 0) {
-      setLoading(false)
-      alert('Ya existe un equipo con ese nombre en tu grupo. Elegí otro.')
-      return
-    }
-    const { data, error } = await supabase
-      .from('players')
-      .insert({ group_id: groupData.id, name: nombre.trim(), team_name: equipo.trim(), saved: false })
-      .select()
-      .single()
-    setLoading(false)
-    if (error) { alert('Error al crear perfil. Intentá de nuevo.'); return }
-    setPlayer(data)
+    const { data: existing } = await supabase.from('players').select('id').eq('team_name', equipo.trim())
+    if (existing && existing.length > 0) { setLoading(false); alert('Ese nombre de equipo ya existe. Elegí otro.'); return }
+    const { data, error } = await supabase.from('players')
+      .insert({ key_id: keyId, name: nombre.trim(), team_name: equipo.trim(), saved: false })
+      .select().single()
+    if (error) { alert('Error al crear perfil.'); setLoading(false); return }
+    await supabase.from('player_keys').update({ used: true }).eq('id', keyId)
+    setLoading(false); setPlayer(data)
     localStorage.setItem('prode_player', JSON.stringify(data))
+    localStorage.setItem('prode_key_id', keyId)
     setScreen('main')
   }
 
   function handleLogout() {
-    localStorage.removeItem('prode_player')
-    localStorage.removeItem('prode_group')
-    setPlayer(null); setGroupData(null)
-    setClave(''); setNombre(''); setEquipo('')
-    setScreen('login'); setTab('pronosticos')
+    localStorage.removeItem('prode_player'); localStorage.removeItem('prode_key_id')
+    setPlayer(null); setKeyId(null); setClave(''); setNombre(''); setEquipo('')
+    setScreen('login'); setTab('pronosticos'); setAdminUnlocked(false); setShowAdminPanel(false)
   }
+
+  async function handleAdminUnlock() {
+    const { data } = await supabase.from('admin_config').select('admin_code').eq('id', 1).single()
+    if (data && adminCode === data.admin_code) {
+      setAdminUnlocked(true); setShowAdminModal(false); setShowAdminPanel(true)
+    } else { alert('Clave admin incorrecta.') }
+  }
+
+  if (screen === 'loading') return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',background:'#18191f',fontSize:40}}>⚽</div>
+  )
 
   return (
     <>
@@ -100,78 +95,79 @@ export default function Home() {
           <span className="hdr-ico">⚽</span>
           <div style={{flex:1}}>
             <div className="hdr-title">Prode Mundial 2026</div>
-            <div className="hdr-sub">
-              {player ? `${player.team_name} · ${groupData?.name}` : 'Ingresá con tu clave para participar'}
-            </div>
+            <div className="hdr-sub">{player ? player.team_name : 'Ingresá con tu clave para participar'}</div>
           </div>
           {screen === 'main' && (
-            <button className="btn-sm" onClick={handleLogout}>Salir</button>
+            <div style={{display:'flex',gap:8,alignItems:'center'}}>
+              <button onClick={() => setShowAdminModal(true)}
+                style={{background:'transparent',border:'none',color:'var(--tx3)',cursor:'pointer',fontSize:18,padding:'4px',lineHeight:1}}
+                title="Admin">⚙️</button>
+              <button className="btn-sm" onClick={handleLogout}>Salir</button>
+            </div>
           )}
         </div>
 
+        {/* ADMIN UNLOCK MODAL */}
+        {showAdminModal && (
+          <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100}}>
+            <div className="card" style={{maxWidth:300,width:'90%'}}>
+              <p style={{fontSize:14,fontWeight:700,color:'var(--tx)',marginBottom:4}}>⚙️ Acceso administrador</p>
+              <p style={{fontSize:12,color:'var(--tx2)',marginBottom:14}}>Solo para el organizador</p>
+              <div className="field">
+                <label>Clave admin</label>
+                <input type="password" value={adminCode} onChange={e=>setAdminCode(e.target.value)}
+                  onKeyDown={e=>e.key==='Enter'&&handleAdminUnlock()} autoComplete="off" />
+              </div>
+              <button className="btn" onClick={handleAdminUnlock} style={{marginBottom:8}}>Entrar</button>
+              <button onClick={()=>setShowAdminModal(false)}
+                style={{width:'100%',padding:'8px',background:'transparent',border:'none',color:'var(--tx3)',fontSize:12,cursor:'pointer'}}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* LOGIN */}
         {screen === 'login' && (
-          <div style={{flex:1, display:'flex', alignItems:'flex-start', justifyContent:'center', padding:'32px 16px'}}>
-            <div className="card" style={{maxWidth:320, width:'100%'}}>
-              <div style={{textAlign:'center', marginBottom:22}}>
-                <div style={{fontSize:42, marginBottom:8}}>⚽</div>
-                <h2 style={{fontSize:18, fontWeight:700, color:'var(--tx)', marginBottom:5}}>Prode Mundial 2026</h2>
-                <p style={{fontSize:12, color:'var(--tx2)'}}>Ingresá la clave que te dio el organizador</p>
+          <div style={{flex:1,display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'32px 16px'}}>
+            <div className="card" style={{maxWidth:320,width:'100%'}}>
+              <div style={{textAlign:'center',marginBottom:22}}>
+                <div style={{fontSize:44,marginBottom:8}}>⚽</div>
+                <h2 style={{fontSize:18,fontWeight:700,color:'var(--tx)',marginBottom:5}}>Prode Mundial 2026</h2>
+                <p style={{fontSize:12,color:'var(--tx2)'}}>Ingresá la clave que te dio el organizador</p>
               </div>
               <div className="field">
-                <label>Clave de acceso</label>
-                <input
-                  type="password"
-                  maxLength={8}
-                  value={clave}
-                  onChange={e => setClave(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                  autoComplete="off"
-                />
+                <label>Tu clave personal</label>
+                <input type="password" maxLength={8} value={clave}
+                  onChange={e=>setClave(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleLogin()} autoComplete="off" />
               </div>
               {loginErr && <div className="err">{loginErr}</div>}
-              <button className="btn" onClick={handleLogin} disabled={loading}>
-                {loading ? 'Verificando...' : 'Entrar'}
-              </button>
+              <button className="btn" onClick={handleLogin} disabled={loading}>{loading?'Verificando...':'Entrar'}</button>
             </div>
           </div>
         )}
 
         {/* REGISTER */}
         {screen === 'register' && (
-          <div style={{flex:1, display:'flex', alignItems:'flex-start', justifyContent:'center', padding:'32px 16px'}}>
-            <div className="card" style={{maxWidth:320, width:'100%'}}>
-              <div style={{textAlign:'center', marginBottom:20}}>
-                <div style={{fontSize:32, marginBottom:6}}>👤</div>
-                <h2 style={{fontSize:16, fontWeight:700, color:'var(--tx)', marginBottom:4}}>Crear tu perfil</h2>
-                <p style={{fontSize:12, color:'var(--tx2)'}}>El nombre de equipo es el que aparece en el ranking</p>
+          <div style={{flex:1,display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'32px 16px'}}>
+            <div className="card" style={{maxWidth:320,width:'100%'}}>
+              <div style={{textAlign:'center',marginBottom:20}}>
+                <div style={{fontSize:34,marginBottom:6}}>👤</div>
+                <h2 style={{fontSize:16,fontWeight:700,color:'var(--tx)',marginBottom:4}}>Crear tu perfil</h2>
+                <p style={{fontSize:12,color:'var(--tx2)'}}>El nombre de equipo aparece en el ranking</p>
               </div>
               <div className="field">
                 <label>Tu nombre</label>
-                <input
-                  type="text"
-                  value={nombre}
-                  onChange={e => setNombre(e.target.value)}
-                  autoComplete="off"
-                />
+                <input type="text" value={nombre} onChange={e=>setNombre(e.target.value)} autoComplete="off" />
               </div>
               <div className="field">
                 <label>Nombre de tu equipo</label>
-                <input
-                  type="text"
-                  value={equipo}
-                  onChange={e => setEquipo(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleRegister()}
-                  autoComplete="off"
-                />
+                <input type="text" value={equipo} onChange={e=>setEquipo(e.target.value)}
+                  onKeyDown={e=>e.key==='Enter'&&handleRegister()} autoComplete="off" />
               </div>
-              <button className="btn" onClick={handleRegister} disabled={loading}>
-                {loading ? 'Creando...' : 'Crear perfil y entrar'}
-              </button>
-              <button
-                onClick={() => { setScreen('login'); setGroupData(null); localStorage.removeItem('prode_group') }}
-                style={{width:'100%', marginTop:10, padding:'8px', background:'transparent', border:'none', color:'var(--tx3)', fontSize:12, cursor:'pointer'}}
-              >
+              <button className="btn" onClick={handleRegister} disabled={loading}>{loading?'Creando...':'Crear perfil y entrar'}</button>
+              <button onClick={()=>{setScreen('login');setKeyId(null)}}
+                style={{width:'100%',marginTop:10,padding:'8px',background:'transparent',border:'none',color:'var(--tx3)',fontSize:12,cursor:'pointer'}}>
                 ← Volver
               </button>
             </div>
@@ -179,142 +175,133 @@ export default function Home() {
         )}
 
         {/* MAIN */}
-        {screen === 'main' && (
+        {screen === 'main' && !showAdminPanel && (
           <>
             <div className="nav">
-              <button className={`ntab ${tab==='pronosticos'?'active':''}`} onClick={() => setTab('pronosticos')}>✏️ Pronósticos</button>
-              <button className={`ntab ${tab==='ranking'?'active':''}`} onClick={() => setTab('ranking')}>📊 Ranking</button>
-              <button className={`ntab ${tab==='admin'?'active':''}`} onClick={() => setTab('admin')}>🔧 Admin</button>
-              <button className={`ntab ${tab==='reglas'?'active':''}`} onClick={() => setTab('reglas')}>📋 Reglas</button>
+              <button className={`ntab ${tab==='pronosticos'?'active':''}`} onClick={()=>setTab('pronosticos')}>✏️ Pronósticos</button>
+              <button className={`ntab ${tab==='resultados'?'active':''}`} onClick={()=>setTab('resultados')}>⚽ Resultados</button>
+              <button className={`ntab ${tab==='ranking'?'active':''}`} onClick={()=>setTab('ranking')}>📊 Ranking</button>
+              <button className={`ntab ${tab==='reglas'?'active':''}`} onClick={()=>setTab('reglas')}>📋 Reglas</button>
             </div>
-            {tab === 'pronosticos' && (
-              <PronosticosTab player={player} groupData={groupData} onSaved={updatedPlayer => {
-                setPlayer(updatedPlayer)
-                localStorage.setItem('prode_player', JSON.stringify(updatedPlayer))
-              }} />
-            )}
-            {tab === 'ranking' && <RankingTab player={player} groupData={groupData} />}
-            {tab === 'reglas' && <ReglasTab />}
-            {tab === 'admin' && <AdminTab groupData={groupData} currentPlayer={player} />}
+            {tab==='pronosticos' && <PronosticosTab player={player} onSaved={p=>{setPlayer(p);localStorage.setItem('prode_player',JSON.stringify(p))}} />}
+            {tab==='resultados' && <ResultadosTab adminUnlocked={adminUnlocked} />}
+            {tab==='ranking' && <RankingTab player={player} />}
+            {tab==='reglas' && <ReglasTab />}
           </>
+        )}
+
+        {/* ADMIN PANEL */}
+        {screen === 'main' && showAdminPanel && (
+          <AdminPanel onClose={()=>{setShowAdminPanel(false);setAdminUnlocked(false)}} currentPlayer={player} />
         )}
       </div>
     </>
   )
 }
 
-function AdminTab({ groupData, currentPlayer }) {
-  const [adminCode, setAdminCode] = useState('')
-  const [authed, setAuthed] = useState(false)
+function AdminPanel({ onClose, currentPlayer }) {
   const [players, setPlayers] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [keys, setKeys] = useState([])
+  const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(null)
+  const [section, setSection] = useState('jugadores')
 
-  async function checkAdmin() {
-    if (adminCode === groupData.admin_code) {
-      setAuthed(true)
-      loadPlayers()
-    } else {
-      alert('Clave admin incorrecta.')
-    }
-  }
+  useEffect(() => { loadData() }, [])
 
-  async function loadPlayers() {
+  async function loadData() {
     setLoading(true)
-    const { data } = await supabase
-      .from('players')
-      .select('*, predictions(count)')
-      .eq('group_id', groupData.id)
-      .order('created_at')
-    setLoading(false)
-    setPlayers(data || [])
+    const [{ data: pData }, { data: kData }] = await Promise.all([
+      supabase.from('players').select('*, predictions(count), player_keys(access_key)').order('created_at'),
+      supabase.from('player_keys').select('*').order('access_key')
+    ])
+    setPlayers(pData || []); setKeys(kData || []); setLoading(false)
   }
 
   async function deletePlayer(p) {
-    if (!confirm(`¿Borrar al jugador "${p.team_name}" (${p.name})?\nEsta acción no se puede deshacer.`)) return
+    if (!confirm(`¿Borrar "${p.team_name}" (${p.name})?\nSu clave quedará libre nuevamente.`)) return
     setDeleting(p.id)
     await supabase.from('predictions').delete().eq('player_id', p.id)
     await supabase.from('players').delete().eq('id', p.id)
-    setDeleting(null)
-    loadPlayers()
+    await supabase.from('player_keys').update({ used: false }).eq('id', p.key_id)
+    setDeleting(null); loadData()
   }
 
   function exportCSV() {
-    if (!players.length) return
-    const rows = [['Equipo','Jugador','Guardó','Pronósticos cargados']]
-    players.forEach(p => {
-      rows.push([p.team_name, p.name, p.saved ? 'Sí' : 'No', p.predictions?.[0]?.count || 0])
+    const rows = [['Clave','Jugador','Equipo','Guardó','Pronósticos']]
+    keys.forEach(k => {
+      const p = players.find(pl => pl.key_id === k.id)
+      rows.push([k.access_key, p?p.name:'(libre)', p?p.team_name:'', p?(p.saved?'Sí':'No'):'', p?(p.predictions?.[0]?.count||0):''])
     })
-    const csv = rows.map(r => r.join(',')).join('\n')
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `prode_${groupData.name}_${new Date().toISOString().slice(0,10)}.csv`
-    a.click()
+    const blob = new Blob(['\uFEFF'+rows.map(r=>r.join(',')).join('\n')],{type:'text/csv;charset=utf-8'})
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
+    a.download = `prode_admin_${new Date().toISOString().slice(0,10)}.csv`; a.click()
   }
 
-  if (!authed) return (
-    <div style={{padding:'24px 14px', flex:1}}>
-      <div className="card" style={{maxWidth:300}}>
-        <p style={{fontSize:14, fontWeight:700, color:'var(--tx)', marginBottom:4}}>🔧 Acceso administrador</p>
-        <p style={{fontSize:12, color:'var(--tx2)', marginBottom:14}}>Solo para el organizador del grupo</p>
-        <div className="field">
-          <label>Clave admin</label>
-          <input
-            type="password"
-            value={adminCode}
-            onChange={e => setAdminCode(e.target.value)}
-            onKeyDown={e => e.key==='Enter' && checkAdmin()}
-            autoComplete="off"
-          />
-        </div>
-        <button className="btn" onClick={checkAdmin}>Entrar como admin</button>
-      </div>
-    </div>
-  )
-
   return (
-    <div style={{padding:'14px', overflowY:'auto', flex:1}}>
-      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
-        <span style={{fontSize:14, fontWeight:700, color:'var(--tx)'}}>
-          {groupData.name} — {players.length} jugador{players.length !== 1 ? 'es' : ''}
-        </span>
+    <div style={{display:'flex',flexDirection:'column',flex:1,overflowY:'hidden'}}>
+      <div style={{background:'var(--bg2)',borderBottom:'1px solid var(--bd)',padding:'12px 16px',display:'flex',alignItems:'center',gap:12,flexShrink:0}}>
+        <span style={{fontSize:16,fontWeight:700,color:'var(--tx)',flex:1}}>⚙️ Panel Admin</span>
         <button className="btn-sm" onClick={exportCSV}>⬇️ CSV</button>
+        <button onClick={onClose} style={{background:'transparent',border:'none',color:'var(--tx2)',cursor:'pointer',fontSize:20,padding:'0 4px'}}>✕</button>
       </div>
-
-      <div className="rk-tbl">
-        <div className="rk-head">Jugadores registrados</div>
-        {loading && <div className="loading">Cargando...</div>}
-        {!loading && players.length === 0 && <div className="empty">No hay jugadores aún.</div>}
-        {players.map(p => (
-          <div key={p.id} style={{display:'flex', alignItems:'center', gap:10, padding:'10px 15px', borderBottom:'1px solid var(--bd)'}}>
-            <div style={{flex:1}}>
-              <div style={{fontSize:13, fontWeight:600, color:'var(--tx)'}}>{p.team_name}</div>
-              <div style={{fontSize:11, color:'var(--tx3)'}}>{p.name}</div>
-            </div>
-            <div style={{textAlign:'right', marginRight:8}}>
-              <div style={{fontSize:11, color: p.saved ? 'var(--em)' : 'var(--tx3)'}}>
-                {p.saved ? '✅ Guardó' : '⏳ Pendiente'}
-              </div>
-              <div style={{fontSize:10, color:'var(--tx3)'}}>{p.predictions?.[0]?.count || 0}/72</div>
-            </div>
-            <button
-              className="btn-danger"
-              onClick={() => deletePlayer(p)}
-              disabled={deleting === p.id}
-              style={{fontSize:11, padding:'4px 10px', flexShrink:0}}
-            >
-              {deleting === p.id ? '...' : '🗑 Borrar'}
-            </button>
+      <div style={{display:'flex',gap:1,background:'var(--bd)',flexShrink:0}}>
+        {[['Claves usadas',`${keys.filter(k=>k.used).length}/60`,'var(--em)'],
+          ['Guardaron',`${players.filter(p=>p.saved).length}/${players.length}`,'var(--gold)'],
+          ['Pendientes',players.filter(p=>!p.saved).length,'var(--tx2)']
+        ].map(([l,v,c])=>(
+          <div key={l} style={{flex:1,background:'var(--bg2)',padding:'10px 6px',textAlign:'center'}}>
+            <div style={{fontSize:10,color:'var(--tx3)',marginBottom:2,textTransform:'uppercase',letterSpacing:'.04em'}}>{l}</div>
+            <div style={{fontSize:18,fontWeight:700,color:c}}>{v}</div>
           </div>
         ))}
       </div>
-
-      <div style={{marginTop:14, padding:'12px 14px', background:'var(--bg2)', borderRadius:10, border:'1px solid var(--bd)', fontSize:12, color:'var(--tx2)'}}>
-        <p style={{fontWeight:700, marginBottom:6, color:'var(--tx)'}}>📋 Cargar resultados reales</p>
-        <p>Para que el ranking sume puntos, ingresá los resultados en Supabase → Table Editor → tabla <code style={{background:'var(--bg4)', padding:'1px 5px', borderRadius:3}}>match_results</code>.</p>
-        <p style={{marginTop:6}}>Campos necesarios: <code style={{background:'var(--bg4)', padding:'1px 4px', borderRadius:3}}>match_key</code> (ej: "A0"), <code style={{background:'var(--bg4)', padding:'1px 4px', borderRadius:3}}>goals_local</code>, <code style={{background:'var(--bg4)', padding:'1px 4px', borderRadius:3}}>goals_visitor</code>.</p>
+      <div style={{display:'flex',background:'var(--bg2)',borderBottom:'1px solid var(--bd)',flexShrink:0}}>
+        {[['jugadores','👥 Jugadores'],['claves','🔑 Claves']].map(([id,label])=>(
+          <button key={id} onClick={()=>setSection(id)}
+            style={{flex:1,padding:'10px',fontSize:12,fontWeight:600,background:'none',border:'none',
+              borderBottom:section===id?'2px solid var(--em)':'2px solid transparent',
+              color:section===id?'var(--em)':'var(--tx2)',cursor:'pointer',fontFamily:'inherit'}}>{label}</button>
+        ))}
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'12px 14px'}}>
+        {loading && <div className="loading">Cargando...</div>}
+        {!loading && section==='jugadores' && (
+          <div className="rk-tbl">
+            <div className="rk-head">Jugadores registrados — {players.length}</div>
+            {players.length===0 && <div className="empty">Nadie se registró aún.</div>}
+            {players.map(p=>(
+              <div key={p.id} style={{display:'flex',alignItems:'center',gap:8,padding:'10px 14px',borderBottom:'1px solid var(--bd)'}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:600,color:'var(--tx)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.team_name}</div>
+                  <div style={{fontSize:11,color:'var(--tx3)'}}>{p.name} · <span style={{color:'var(--em)',fontWeight:600,fontFamily:'monospace'}}>{p.player_keys?.access_key}</span></div>
+                </div>
+                <div style={{textAlign:'right',marginRight:6,flexShrink:0}}>
+                  <div style={{fontSize:11,color:p.saved?'var(--em)':'var(--tx3)'}}>{p.saved?'✅ Guardó':'⏳ Pendiente'}</div>
+                  <div style={{fontSize:10,color:'var(--tx3)'}}>{p.predictions?.[0]?.count||0}/72</div>
+                </div>
+                <button className="btn-danger" onClick={()=>deletePlayer(p)} disabled={deleting===p.id}
+                  style={{fontSize:11,padding:'4px 9px',flexShrink:0}}>{deleting===p.id?'...':'🗑'}</button>
+              </div>
+            ))}
+          </div>
+        )}
+        {!loading && section==='claves' && (
+          <div className="rk-tbl">
+            <div className="rk-head">Todas las claves — {keys.length}</div>
+            {keys.map(k=>{
+              const p=players.find(pl=>pl.key_id===k.id)
+              return (
+                <div key={k.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 14px',borderBottom:'1px solid var(--bd)'}}>
+                  <span style={{fontSize:13,fontWeight:700,color:k.used?'var(--tx2)':'var(--em)',fontFamily:'monospace',minWidth:65}}>{k.access_key}</span>
+                  <div style={{flex:1,fontSize:12,color:'var(--tx2)'}}>
+                    {p?<><span style={{color:'var(--tx)',fontWeight:600}}>{p.team_name}</span> · {p.name}</>:<span style={{color:'var(--tx3)'}}>Sin asignar</span>}
+                  </div>
+                  <span style={{fontSize:10,color:k.used?'var(--tx3)':'var(--em)'}}>{k.used?'● Usada':'○ Libre'}</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )
