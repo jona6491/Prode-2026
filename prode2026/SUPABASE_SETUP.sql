@@ -6,9 +6,9 @@
 -- 1. GRUPOS (uno por cada prode: Monos, Oro Verde)
 create table groups (
   id uuid default gen_random_uuid() primary key,
-  name text not null,                    -- Nombre visible: "Monos"
-  access_code text not null unique,      -- Clave de jugadores: "MON001"
-  admin_code text not null,              -- Clave de admin (secreta)
+  name text not null,                    -- Nombre visible: ""
+  access_code text not null unique,      -- Clave de jugadores: ""
+  admin_code text not null,              -- Clave de admin (secret)
   created_at timestamptz default now()
 );
 
@@ -16,8 +16,8 @@ create table groups (
 create table players (
   id uuid default gen_random_uuid() primary key,
   group_id uuid references groups(id) on delete cascade,
-  name text not null,           -- Nombre real: "Rodrigo"
-  team_name text not null,      -- Nombre del equipo: "Los Invictos"
+  name text not null,           -- Nombre real: ""
+  team_name text not null,      -- Nombre del equipo: ""
   saved boolean default false,  -- Si ya guardó sus pronósticos
   created_at timestamptz default now()
 );
