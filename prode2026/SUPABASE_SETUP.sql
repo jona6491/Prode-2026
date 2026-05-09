@@ -85,5 +85,5 @@ create policy "results_update" on match_results for update using (true);
 -- ============================================
 
 insert into groups (name, access_code, admin_code) values
-  ('Monos',     'MON001', 'ADMIN_MONOS'),    -- <-- cambiá ADMIN_MONOS por tu clave secreta
+  ('Monos',     'MON01', 'ADMIN_MONOS'),    -- <-- cambiá ADMIN_MONOS por tu clave secreta
   ('Oro Verde', 'ORO001', 'ADMIN_ORO');      -- <-- cambiá ADMIN_ORO por tu clave secreta
