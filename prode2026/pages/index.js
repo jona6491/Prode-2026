@@ -158,7 +158,15 @@ export default function Home() {
               </div>
               <div className="field">
                 <label>Tu nombre</label>
-                <input type="text" value={nombre} onChange={e=>setNombre(e.target.value)} autoComplete="off" />
+                <input
+  type="password"
+  maxLength={8}
+  value={clave}
+  placeholder=""
+  autoComplete="new-password"
+  onChange={e=>setClave(e.target.value)}
+  onKeyDown={e=>e.key==='Enter'&&handleLogin()}
+/>
               </div>
               <div className="field">
                 <label>Nombre de tu equipo</label>
