@@ -74,7 +74,7 @@ export default function Home() {
   async function handleAdminUnlock() {
     const { data } = await supabase.from('admin_config').select('admin_code').eq('id', 1).single()
     if (data && adminCode === data.admin_code) {
-      setAdminUnlocked(true); setShowAdminModal(false); setShowAdminPanel(true)
+      setAdminUnlocked(true); setShowAdminModal(false); setTab('admin')
     } else { alert('Clave admin incorrecta.') }
   }
 
@@ -175,24 +175,21 @@ export default function Home() {
         )}
 
         {/* MAIN */}
-        {screen === 'main' && !showAdminPanel && (
+        {screen === 'main' && (
           <>
-            <div className="nav">
+            <div className="nav" style={{overflowX:'auto'}}>
               <button className={`ntab ${tab==='pronosticos'?'active':''}`} onClick={()=>setTab('pronosticos')}>✏️ Pronósticos</button>
               <button className={`ntab ${tab==='resultados'?'active':''}`} onClick={()=>setTab('resultados')}>⚽ Resultados</button>
               <button className={`ntab ${tab==='ranking'?'active':''}`} onClick={()=>setTab('ranking')}>📊 Ranking</button>
               <button className={`ntab ${tab==='reglas'?'active':''}`} onClick={()=>setTab('reglas')}>📋 Reglas</button>
+              {adminUnlocked && <button className={`ntab ${tab==='admin'?'active':''}`} onClick={()=>setTab('admin')}>⚙️ Admin</button>}
             </div>
             {tab==='pronosticos' && <PronosticosTab player={player} onSaved={p=>{setPlayer(p);localStorage.setItem('prode_player',JSON.stringify(p))}} />}
             {tab==='resultados' && <ResultadosTab adminUnlocked={adminUnlocked} />}
             {tab==='ranking' && <RankingTab player={player} />}
             {tab==='reglas' && <ReglasTab />}
+            {tab==='admin' && adminUnlocked && <AdminPanel onClose={()=>{setAdminUnlocked(false);setTab('pronosticos')}} currentPlayer={player} />}
           </>
-        )}
-
-        {/* ADMIN PANEL */}
-        {screen === 'main' && showAdminPanel && (
-          <AdminPanel onClose={()=>{setShowAdminPanel(false);setAdminUnlocked(false)}} currentPlayer={player} />
         )}
       </div>
     </>
