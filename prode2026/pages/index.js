@@ -20,6 +20,7 @@ export default function Home() {
   const [adminUnlocked, setAdminUnlocked] = useState(false)
   const [adminCode, setAdminCode] = useState('')
   const [showAdminPanel, setShowAdminPanel] = useState(false)
+  const [transparencyEnabled, setTransparencyEnabled] = useState(false)
 
   useEffect(() => {
     const savedPlayer = localStorage.getItem('prode_player')
@@ -188,7 +189,7 @@ export default function Home() {
             {tab==='resultados' && <ResultadosTab adminUnlocked={adminUnlocked} />}
             {tab==='ranking' && <RankingTab player={player} />}
             {tab==='reglas' && <ReglasTab />}
-            {tab==='admin' && adminUnlocked && <AdminPanel onClose={()=>{setAdminUnlocked(false);setTab('pronosticos')}} currentPlayer={player} />}
+            {tab==='admin' && adminUnlocked && <AdminPanel onClose={()=>{setAdminUnlocked(false);setTab('pronosticos')}} currentPlayer={player} transparencyEnabled={transparencyEnabled} setTransparencyEnabled={setTransparencyEnabled} />}
           </>
         )}
       </div>
@@ -196,17 +197,15 @@ export default function Home() {
   )
 }
 
-function AdminPanel({ onClose, currentPlayer }) {
+function AdminPanel({ onClose, currentPlayer, transparencyEnabled, setTransparencyEnabled }) {
   const [players, setPlayers] = useState([])
   const [keys, setKeys] = useState([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(null)
   const [section, setSection] = useState('jugadores')
+  const [togglingTransparency, setTogglingTransparency] = useState(false)
 
   useEffect(() => { loadData() }, [])
-
-  const [transparency, setTransparency] = useState(false)
-  const [togglingTransparency, setTogglingTransparency] = useState(false)
 
   async function loadData() {
     setLoading(true)
@@ -216,15 +215,15 @@ function AdminPanel({ onClose, currentPlayer }) {
       supabase.from('admin_config').select('transparency_enabled').eq('id',1).single()
     ])
     setPlayers(pData || []); setKeys(kData || [])
-    setTransparency(cfgData?.transparency_enabled || false)
+    if (cfgData) setTransparencyEnabled(cfgData.transparency_enabled)
     setLoading(false)
   }
 
   async function toggleTransparency() {
     setTogglingTransparency(true)
-    const newVal = !transparency
+    const newVal = !transparencyEnabled
     await supabase.from('admin_config').update({ transparency_enabled: newVal }).eq('id', 1)
-    setTransparency(newVal)
+    setTransparencyEnabled(newVal)
     setTogglingTransparency(false)
   }
 
@@ -256,20 +255,20 @@ function AdminPanel({ onClose, currentPlayer }) {
         <button onClick={onClose} style={{background:'transparent',border:'none',color:'var(--tx2)',cursor:'pointer',fontSize:20,padding:'0 4px'}}>✕</button>
       </div>
       {/* TRANSPARENCY TOGGLE */}
-      <div style={{padding:'12px 16px',background:transparency?'rgba(34,201,138,0.08)':'var(--bg3)',borderBottom:'1px solid var(--bd)',display:'flex',alignItems:'center',gap:12,flexShrink:0}}>
+      <div style={{padding:'12px 16px',background:transparencyEnabled?'rgba(34,201,138,0.08)':'var(--bg3)',borderBottom:'1px solid var(--bd)',display:'flex',alignItems:'center',gap:12,flexShrink:0}}>
         <div style={{flex:1}}>
-          <div style={{fontSize:13,fontWeight:600,color:transparency?'var(--em)':'var(--tx)'}}>
+          <div style={{fontSize:13,fontWeight:600,color:transparencyEnabled?'var(--em)':'var(--tx)'}}>
             👁️ Modo transparencia
           </div>
           <div style={{fontSize:11,color:'var(--tx3)',marginTop:2}}>
-            {transparency ? 'Activo — todos pueden ver los pronósticos de los demás' : 'Inactivo — los pronósticos son privados'}
+            {transparencyEnabled ? 'Activo — todos pueden ver los pronósticos de los demás' : 'Inactivo — los pronósticos son privados'}
           </div>
         </div>
         <button onClick={toggleTransparency} disabled={togglingTransparency}
           style={{padding:'7px 18px',borderRadius:20,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',border:'none',
-            background:transparency?'var(--em)':'var(--bg4)',color:transparency?'#fff':'var(--tx2)',
+            background:transparencyEnabled?'var(--em)':'var(--bg4)',color:transparencyEnabled?'#fff':'var(--tx2)',
             transition:'all .2s',flexShrink:0}}>
-          {togglingTransparency?'...':transparency?'🟢 Apagar':'⚫ Activar'}
+          {togglingTransparency?'...': transparencyEnabled?'🟢 Apagar':'⚫ Activar'}
         </button>
       </div>
       <div style={{display:'flex',gap:1,background:'var(--bd)',flexShrink:0}}>
