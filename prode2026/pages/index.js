@@ -205,13 +205,27 @@ function AdminPanel({ onClose, currentPlayer }) {
 
   useEffect(() => { loadData() }, [])
 
+  const [transparency, setTransparency] = useState(false)
+  const [togglingTransparency, setTogglingTransparency] = useState(false)
+
   async function loadData() {
     setLoading(true)
-    const [{ data: pData }, { data: kData }] = await Promise.all([
+    const [{ data: pData }, { data: kData }, { data: cfgData }] = await Promise.all([
       supabase.from('players').select('*, predictions(count), player_keys(access_key)').order('created_at'),
-      supabase.from('player_keys').select('*').order('access_key')
+      supabase.from('player_keys').select('*').order('access_key'),
+      supabase.from('admin_config').select('transparency_enabled').eq('id',1).single()
     ])
-    setPlayers(pData || []); setKeys(kData || []); setLoading(false)
+    setPlayers(pData || []); setKeys(kData || [])
+    setTransparency(cfgData?.transparency_enabled || false)
+    setLoading(false)
+  }
+
+  async function toggleTransparency() {
+    setTogglingTransparency(true)
+    const newVal = !transparency
+    await supabase.from('admin_config').update({ transparency_enabled: newVal }).eq('id', 1)
+    setTransparency(newVal)
+    setTogglingTransparency(false)
   }
 
   async function deletePlayer(p) {
@@ -240,6 +254,23 @@ function AdminPanel({ onClose, currentPlayer }) {
         <span style={{fontSize:16,fontWeight:700,color:'var(--tx)',flex:1}}>⚙️ Panel Admin</span>
         <button className="btn-sm" onClick={exportCSV}>⬇️ CSV</button>
         <button onClick={onClose} style={{background:'transparent',border:'none',color:'var(--tx2)',cursor:'pointer',fontSize:20,padding:'0 4px'}}>✕</button>
+      </div>
+      {/* TRANSPARENCY TOGGLE */}
+      <div style={{padding:'12px 16px',background:transparency?'rgba(34,201,138,0.08)':'var(--bg3)',borderBottom:'1px solid var(--bd)',display:'flex',alignItems:'center',gap:12,flexShrink:0}}>
+        <div style={{flex:1}}>
+          <div style={{fontSize:13,fontWeight:600,color:transparency?'var(--em)':'var(--tx)'}}>
+            👁️ Modo transparencia
+          </div>
+          <div style={{fontSize:11,color:'var(--tx3)',marginTop:2}}>
+            {transparency ? 'Activo — todos pueden ver los pronósticos de los demás' : 'Inactivo — los pronósticos son privados'}
+          </div>
+        </div>
+        <button onClick={toggleTransparency} disabled={togglingTransparency}
+          style={{padding:'7px 18px',borderRadius:20,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',border:'none',
+            background:transparency?'var(--em)':'var(--bg4)',color:transparency?'#fff':'var(--tx2)',
+            transition:'all .2s',flexShrink:0}}>
+          {togglingTransparency?'...':transparency?'🟢 Apagar':'⚫ Activar'}
+        </button>
       </div>
       <div style={{display:'flex',gap:1,background:'var(--bd)',flexShrink:0}}>
         {[['Claves usadas',`${keys.filter(k=>k.used).length}/60`,'var(--em)'],
