@@ -187,7 +187,7 @@ export default function Home() {
             </div>
             {tab==='pronosticos' && <PronosticosTab player={player} onSaved={p=>{setPlayer(p);localStorage.setItem('prode_player',JSON.stringify(p))}} />}
             {tab==='resultados' && <ResultadosTab adminUnlocked={adminUnlocked} />}
-            {tab==='ranking' && <RankingTab player={player} />}
+            {tab==='ranking' && <RankingTab player={player} transparencyEnabled={transparencyEnabled} />}
             {tab==='reglas' && <ReglasTab />}
             {tab==='admin' && adminUnlocked && <AdminPanel onClose={()=>{setAdminUnlocked(false);setTab('pronosticos')}} currentPlayer={player} transparencyEnabled={transparencyEnabled} setTransparencyEnabled={setTransparencyEnabled} />}
           </>
