@@ -4,11 +4,10 @@ import { scorePoints, GROUPS, flagUrl } from '../lib/worldcup'
 
 const GROUP_KEYS = Object.keys(GROUPS)
 
-export default function RankingTab({ player }) {
+export default function RankingTab({ player, transparencyEnabled }) {
   const [players, setPlayers] = useState([])
   const [results, setResults] = useState({})
   const [loading, setLoading] = useState(true)
-  const [transparencyEnabled, setTransparencyEnabled] = useState(false)
   const [viewingPlayer, setViewingPlayer] = useState(null) // player whose predictions we're viewing
   const [viewPredictions, setViewPredictions] = useState({})
   const [viewLoading, setViewLoading] = useState(false)
@@ -22,16 +21,14 @@ export default function RankingTab({ player }) {
 
   async function loadRanking() {
     setLoading(true)
-    const [{ data: playersData }, { data: resultsData }, { data: configData }] = await Promise.all([
+    const [{ data: playersData }, { data: resultsData }] = await Promise.all([
       supabase.from('players').select('*, predictions(*)').eq('saved', true).order('created_at'),
-      supabase.from('match_results').select('*'),
-      supabase.from('admin_config').select('transparency_enabled').eq('id', 1).single()
+      supabase.from('match_results').select('*')
     ])
 
     const resultsMap = {}
     if (resultsData) resultsData.forEach(r => { resultsMap[r.match_key] = { l: r.goals_local, v: r.goals_visitor } })
     setResults(resultsMap)
-    setTransparencyEnabled(configData?.transparency_enabled || false)
 
     if (playersData) {
       const ranked = playersData.map(p => {
