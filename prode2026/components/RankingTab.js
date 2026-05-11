@@ -16,7 +16,7 @@ export default function RankingTab({ player }) {
 
   useEffect(() => {
     loadRanking()
-    const interval = setInterval(loadRanking, 60000)
+    const interval = setInterval(loadRanking, 15000)
     return () => clearInterval(interval)
   }, [])
 
