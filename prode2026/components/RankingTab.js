@@ -4,10 +4,23 @@ import { scorePoints, GROUPS, flagUrl } from '../lib/worldcup'
 
 const GROUP_KEYS = Object.keys(GROUPS)
 
-export default function RankingTab({ player, transparencyEnabled }) {
+export default function RankingTab({ player, transparencyEnabled: transparencyProp }) {
   const [players, setPlayers] = useState([])
   const [results, setResults] = useState({})
   const [loading, setLoading] = useState(true)
+  const [transparencyEnabled, setTransparencyEnabled] = useState(transparencyProp || false)
+
+  // Sync with prop changes (admin toggling on same device)
+  useEffect(() => { setTransparencyEnabled(transparencyProp) }, [transparencyProp])
+
+  // Also poll Supabase every 10s to catch changes from other devices
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const { data } = await supabase.from('admin_config').select('transparency_enabled').eq('id',1).single()
+      if (data) setTransparencyEnabled(data.transparency_enabled)
+    }, 10000)
+    return () => clearInterval(interval)
+  }, [])
   const [viewingPlayer, setViewingPlayer] = useState(null) // player whose predictions we're viewing
   const [viewPredictions, setViewPredictions] = useState({})
   const [viewLoading, setViewLoading] = useState(false)
