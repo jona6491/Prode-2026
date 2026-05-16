@@ -41,9 +41,9 @@ export function getPhaseLabel(phase) {
 }
 
 export function getDeadlineText(phase) {
-  const d = PHASE_DEADLINES[phase]
-  const options = { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit', timeZone:'America/Argentina/Buenos_Aires' }
-  return d.toLocaleDateString('es-AR', options) + 'hs (Argentina)'
+  if (phase === 'early') return 'Miércoles 11 de Junio a las 15:30hs'
+  if (phase === 'late') return 'Miércoles 24 de Junio a las 15:30hs'
+  return ''
 }
 
 // Match keys per phase
