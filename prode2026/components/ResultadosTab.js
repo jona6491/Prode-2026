@@ -11,10 +11,28 @@ export default function ResultadosTab({ adminUnlocked }) {
   const [editing, setEditing] = useState(null)
   const [editL, setEditL] = useState('')
   const [editV, setEditV] = useState('')
-  const [editDouble, setEditDouble] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [syncMsg, setSyncMsg] = useState(null)
 
   useEffect(() => { loadResults() }, [])
+
+  async function syncResults() {
+    setSyncing(true); setSyncMsg(null)
+    try {
+      const res = await fetch('/api/sync-results', { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) {
+        setSyncMsg({ ok: true, text: `✅ ${data.synced} resultado${data.synced!==1?'s':''} sincronizado${data.synced!==1?'s':''}${data.skipped>0?` · ${data.skipped} salteado${data.skipped!==1?'s':''}`:''}`})
+        await loadResults()
+      } else {
+        setSyncMsg({ ok: false, text: `❌ Error: ${data.error}` })
+      }
+    } catch(e) {
+      setSyncMsg({ ok: false, text: `❌ Error de conexión` })
+    }
+    setSyncing(false)
+  }
 
   async function loadResults() {
     setLoading(true)
@@ -31,8 +49,7 @@ export default function ResultadosTab({ adminUnlocked }) {
     const payload = {
       match_key:key, group_key:grp, match_index:idx,
       local_team:match[0], visitor_team:match[1],
-      goals_local:parseInt(editL), goals_visitor:parseInt(editV),
-      is_double: editDouble
+      goals_local:parseInt(editL), goals_visitor:parseInt(editV)
     }
     if (results[key]) {
       await supabase.from('match_results').update(payload).eq('match_key', key)
@@ -54,8 +71,23 @@ export default function ResultadosTab({ adminUnlocked }) {
   return (
     <div style={{display:'flex',flexDirection:'column',flex:1}}>
       {adminUnlocked && (
-        <div className="info-bar ok" style={{margin:'10px 14px 0',flexShrink:0}}>
-          <span>⚙️ <strong style={{color:'var(--em)'}}>Modo admin</strong> — Cargá resultados y activá x2 en partidos especiales</span>
+        <div style={{margin:'10px 14px 0',flexShrink:0}}>
+          <div className="info-bar ok" style={{marginBottom:8}}>
+            <span style={{flex:1}}>⚙️ <strong style={{color:'var(--em)'}}>Modo admin</strong> — Cargá resultados manualmente o sincronizá con la API</span>
+          </div>
+          <button onClick={syncResults} disabled={syncing}
+            style={{width:'100%',padding:'10px',background:'var(--bg3)',border:'1px solid var(--bd2)',borderRadius:8,
+              fontSize:13,fontWeight:600,color:syncing?'var(--tx3)':'var(--tx)',cursor:syncing?'not-allowed':'pointer',fontFamily:'inherit',
+              display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+            {syncing ? <>⏳ Sincronizando...</> : <>🔄 Sincronizar resultados con API</>}
+          </button>
+          {syncMsg && (
+            <div style={{marginTop:6,padding:'8px 12px',borderRadius:8,fontSize:12,
+              background:syncMsg.ok?'var(--em-bg)':'rgba(239,83,80,0.1)',
+              color:syncMsg.ok?'var(--em)':'var(--red)',border:`1px solid ${syncMsg.ok?'rgba(34,201,138,.25)':'rgba(239,83,80,.25)'}`}}>
+              {syncMsg.text}
+            </div>
+          )}
         </div>
       )}
       {!adminUnlocked && (
@@ -98,8 +130,7 @@ export default function ResultadosTab({ adminUnlocked }) {
                           <div className="lkd" style={{background:'var(--em-bg)',color:'var(--tx)'}}>{res.l}</div>
                           <span className="sdash">-</span>
                           <div className="lkd" style={{background:'var(--em-bg)',color:'var(--tx)'}}>{res.v}</div>
-                          {res.double && <span style={{fontSize:11,fontWeight:700,color:'var(--gold)',marginLeft:2}}>x2</span>}
-                        </div>
+                                        </div>
                       ) : (
                         <div style={{fontSize:11,color:'var(--tx3)',padding:'7px 10px',background:'var(--bg4)',borderRadius:7,whiteSpace:'nowrap'}}>
                           {adminUnlocked?'Sin resultado':'No jugado'}
@@ -113,7 +144,7 @@ export default function ResultadosTab({ adminUnlocked }) {
                   </div>
                   {adminUnlocked && !isEditing && (
                     <div style={{display:'flex',justifyContent:'center',gap:8}}>
-                      <button className="btn-sm" onClick={()=>{setEditing(key);setEditL(res?.l??'');setEditV(res?.v??'');setEditDouble(res?.double||false)}}>
+                      <button className="btn-sm" onClick={()=>{setEditing(key);setEditL(res?.l??'');setEditV(res?.v??'')}}>
                         {res?'✏️ Editar':'➕ Cargar resultado'}
                       </button>
                       {res&&<button className="btn-danger" onClick={()=>deleteResult(key)} style={{fontSize:11,padding:'4px 10px'}}>🗑</button>}
@@ -127,13 +158,6 @@ export default function ResultadosTab({ adminUnlocked }) {
                         <span className="sdash">-</span>
                         <input className="sinp" type="number" min="0" max="20" value={editV} onChange={e=>setEditV(e.target.value)} style={{width:44}}/>
                         <span style={{fontSize:11,color:'var(--tx2)'}}>{match[1]}</span>
-                      </div>
-                      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-                        <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontSize:12,color:'var(--tx2)'}}>
-                          <input type="checkbox" checked={editDouble} onChange={e=>setEditDouble(e.target.checked)}
-                            style={{width:16,height:16,accentColor:'var(--gold)'}}/>
-                          <span>🟡 Partido <strong style={{color:'var(--gold)'}}>x2</strong> (puntos dobles)</span>
-                        </label>
                       </div>
                       <div style={{display:'flex',gap:8,justifyContent:'center'}}>
                         <button className="btn" onClick={()=>saveResult(selGrp,i,match)} disabled={saving}
