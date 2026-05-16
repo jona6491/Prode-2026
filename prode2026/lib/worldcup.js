@@ -13,31 +13,95 @@ export const COUNTRY_CODES = {
   'Inglaterra':'gb-eng','Croacia':'hr','Ghana':'gh','Panamá':'pa'
 }
 
+// Deadlines hora Argentina (UTC-3)
+// Fecha 1: 11 Jun 15:30 ARG = 18:30 UTC
+// Fecha 2: 18 Jun 12:30 ARG = 15:30 UTC  
+// Fecha 3: 24 Jun 15:30 ARG = 18:30 UTC
+export const PHASE_DEADLINES = {
+  early: new Date('2026-06-11T18:30:00Z'), // fecha 1+2
+  late:  new Date('2026-06-24T18:30:00Z'), // fecha 3
+}
+
+export function getOpenPhases() {
+  const now = new Date()
+  const phases = []
+  if (now < PHASE_DEADLINES.early) phases.push('early')
+  if (now < PHASE_DEADLINES.late) phases.push('late')
+  return phases
+}
+
+export function isPhaseOpen(phase) {
+  return new Date() < PHASE_DEADLINES[phase]
+}
+
+export function getPhaseLabel(phase) {
+  if (phase === 'early') return 'Fecha 1 y 2'
+  if (phase === 'late') return 'Fecha 3'
+  return ''
+}
+
+export function getDeadlineText(phase) {
+  const d = PHASE_DEADLINES[phase]
+  const options = { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit', timeZone:'America/Argentina/Buenos_Aires' }
+  return d.toLocaleDateString('es-AR', options) + 'hs (Argentina)'
+}
+
+// Match keys per phase
+export const EARLY_MATCHES = [ // Fecha 1 (partidos 0) y Fecha 2 (partidos 1-3 por grupo)
+  'A0','A1','A2','A3',
+  'B0','B1','B2','B3',
+  'C0','C1','C2','C3',
+  'D0','D1','D2','D3',
+  'E0','E1','E2','E3',
+  'F0','F1','F2','F3',
+  'G0','G1','G2','G3',
+  'H0','H1','H2','H3',
+  'I0','I1','I2','I3',
+  'J0','J1','J2','J3',
+  'K0','K1','K2','K3',
+  'L0','L1','L2','L3',
+]
+
+export const LATE_MATCHES = [ // Fecha 3
+  'A4','A5',
+  'B4','B5',
+  'C4','C5',
+  'D4','D5',
+  'E4','E5',
+  'F4','F5',
+  'G4','G5',
+  'H4','H5',
+  'I4','I5',
+  'J4','J5',
+  'K4','K5',
+  'L4','L5',
+]
+
 export const GROUPS = {
   A:{teams:['México','Corea del Sur','Sudáfrica','Rep. Checa'],
-    matches:[['México','Sudáfrica','11 Jun'],['Corea del Sur','Rep. Checa','11 Jun'],['Rep. Checa','Sudáfrica','18 Jun'],['México','Corea del Sur','18 Jun'],['Rep. Checa','México','24 Jun'],['Sudáfrica','Corea del Sur','24 Jun']]},
+    matches:[['México','Sudáfrica','11 Jun 16:00'],['Corea del Sur','Rep. Checa','11 Jun 23:00'],['Rep. Checa','Sudáfrica','18 Jun 13:00'],['México','Corea del Sur','18 Jun 22:00'],['Rep. Checa','México','24 Jun 16:00'],['Sudáfrica','Corea del Sur','24 Jun 16:00']]},
   B:{teams:['Canadá','Suiza','Qatar','Bosnia y Herz.'],
-    matches:[['Canadá','Bosnia y Herz.','12 Jun'],['Qatar','Suiza','13 Jun'],['Suiza','Bosnia y Herz.','18 Jun'],['Canadá','Qatar','18 Jun'],['Suiza','Canadá','24 Jun'],['Bosnia y Herz.','Qatar','24 Jun']]},
+    matches:[['Canadá','Bosnia y Herz.','12 Jun 16:00'],['Qatar','Suiza','13 Jun 16:00'],['Suiza','Bosnia y Herz.','18 Jun 16:00'],['Canadá','Qatar','18 Jun 19:00'],['Suiza','Canadá','24 Jun 16:00'],['Bosnia y Herz.','Qatar','24 Jun 16:00']]},
   C:{teams:['Brasil','Marruecos','Escocia','Haití'],
-    matches:[['Brasil','Marruecos','13 Jun'],['Haití','Escocia','13 Jun'],['Escocia','Marruecos','19 Jun'],['Brasil','Haití','19 Jun'],['Escocia','Brasil','24 Jun'],['Marruecos','Haití','24 Jun']]},
+    matches:[['Brasil','Marruecos','13 Jun 19:00'],['Haití','Escocia','13 Jun 22:00'],['Escocia','Marruecos','19 Jun 19:00'],['Brasil','Haití','19 Jun 22:00'],['Escocia','Brasil','25 Jun'],['Marruecos','Haití','25 Jun']]},
   D:{teams:['Estados Unidos','Australia','Paraguay','Turquía'],
-    matches:[['Estados Unidos','Paraguay','12 Jun'],['Australia','Turquía','13 Jun'],['Turquía','Paraguay','19 Jun'],['Estados Unidos','Australia','19 Jun'],['Turquía','Estados Unidos','25 Jun'],['Paraguay','Australia','25 Jun']]},
+    matches:[['Estados Unidos','Paraguay','12 Jun 22:00'],['Australia','Turquía','13 Jun 01:00'],['Turquía','Paraguay','19 Jun 01:00'],['Estados Unidos','Australia','19 Jun 16:00'],['Turquía','Estados Unidos','25 Jun'],['Paraguay','Australia','25 Jun']]},
   E:{teams:['Alemania','Ecuador','Costa de Marfil','Curazao'],
-    matches:[['Alemania','Curazao','14 Jun'],['Costa de Marfil','Ecuador','14 Jun'],['Alemania','Costa de Marfil','20 Jun'],['Ecuador','Curazao','20 Jun'],['Ecuador','Alemania','25 Jun'],['Curazao','Costa de Marfil','25 Jun']]},
+    matches:[['Alemania','Curazao','14 Jun 14:00'],['Costa de Marfil','Ecuador','14 Jun 20:00'],['Alemania','Costa de Marfil','20 Jun 17:00'],['Ecuador','Curazao','20 Jun 21:00'],['Ecuador','Alemania','25 Jun'],['Curazao','Costa de Marfil','25 Jun']]},
   F:{teams:['Países Bajos','Japón','Túnez','Suecia'],
-    matches:[['Países Bajos','Japón','14 Jun'],['Suecia','Túnez','14 Jun'],['Países Bajos','Suecia','20 Jun'],['Túnez','Japón','20 Jun'],['Japón','Suecia','25 Jun'],['Túnez','Países Bajos','25 Jun']]},
+    matches:[['Países Bajos','Japón','14 Jun 17:00'],['Suecia','Túnez','14 Jun 23:00'],['Países Bajos','Suecia','20 Jun 14:00'],['Túnez','Japón','20 Jun 01:00'],['Japón','Suecia','25 Jun'],['Túnez','Países Bajos','25 Jun']]},
   G:{teams:['Bélgica','Irán','Egipto','Nueva Zelanda'],
-    matches:[['Irán','Nueva Zelanda','15 Jun'],['Bélgica','Egipto','15 Jun'],['Bélgica','Irán','21 Jun'],['Nueva Zelanda','Egipto','21 Jun'],['Egipto','Irán','26 Jun'],['Nueva Zelanda','Bélgica','26 Jun']]},
+    matches:[['Irán','Nueva Zelanda','15 Jun 22:00'],['Bélgica','Egipto','15 Jun 16:00'],['Bélgica','Irán','21 Jun 16:00'],['Nueva Zelanda','Egipto','21 Jun 22:00'],['Egipto','Irán','26 Jun'],['Nueva Zelanda','Bélgica','26 Jun']]},
   H:{teams:['España','Uruguay','Cabo Verde','Arabia Saudita'],
-    matches:[['España','Cabo Verde','15 Jun'],['Arabia Saudita','Uruguay','15 Jun'],['España','Arabia Saudita','21 Jun'],['Uruguay','Cabo Verde','21 Jun'],['Cabo Verde','Arabia Saudita','26 Jun'],['Uruguay','España','26 Jun']]},
+    matches:[['España','Cabo Verde','15 Jun 13:00'],['Arabia Saudita','Uruguay','15 Jun 19:00'],['España','Arabia Saudita','21 Jun 13:00'],['Uruguay','Cabo Verde','21 Jun 19:00'],['Cabo Verde','Arabia Saudita','26 Jun'],['Uruguay','España','26 Jun']]},
   I:{teams:['Francia','Senegal','Noruega','Iraq'],
-    matches:[['Francia','Senegal','16 Jun'],['Iraq','Noruega','16 Jun'],['Francia','Iraq','22 Jun'],['Noruega','Senegal','22 Jun'],['Noruega','Francia','26 Jun'],['Senegal','Iraq','26 Jun']]},
+    matches:[['Francia','Senegal','16 Jun 16:00'],['Iraq','Noruega','16 Jun 19:00'],['Francia','Iraq','22 Jun 18:00'],['Noruega','Senegal','22 Jun 21:00'],['Noruega','Francia','27 Jun'],['Senegal','Iraq','27 Jun']]},
   J:{teams:['Argentina','Argelia','Austria','Jordania'],
-    matches:[['Argentina','Argelia','16 Jun'],['Austria','Jordania','16 Jun'],['Argentina','Austria','22 Jun'],['Jordania','Argelia','22 Jun'],['Argelia','Austria','27 Jun'],['Jordania','Argentina','27 Jun']]},
+    matches:[['Argentina','Argelia','16 Jun 22:00'],['Austria','Jordania','16 Jun 01:00'],['Argentina','Austria','22 Jun 14:00'],['Jordania','Argelia','22 Jun 00:00'],['Argelia','Austria','27 Jun'],['Jordania','Argentina','27 Jun 23:00']]},
   K:{teams:['Portugal','RD del Congo','Uzbekistán','Colombia'],
-    matches:[['Portugal','RD del Congo','17 Jun'],['Uzbekistán','Colombia','17 Jun'],['Portugal','Uzbekistán','23 Jun'],['Colombia','RD del Congo','23 Jun'],['Colombia','Portugal','27 Jun'],['RD del Congo','Uzbekistán','27 Jun']]},
+    matches:[['Portugal','RD del Congo','17 Jun 14:00'],['Uzbekistán','Colombia','17 Jun 23:00'],['Portugal','Uzbekistán','23 Jun 14:00'],['Colombia','RD del Congo','23 Jun 23:00'],['Colombia','Portugal','27 Jun 20:30'],['RD del Congo','Uzbekistán','27 Jun 20:30']]},
   L:{teams:['Inglaterra','Croacia','Ghana','Panamá'],
-    matches:[['Inglaterra','Croacia','17 Jun'],['Ghana','Panamá','17 Jun'],['Inglaterra','Ghana','23 Jun'],['Panamá','Croacia','23 Jun'],['Panamá','Inglaterra','27 Jun'],['Croacia','Ghana','27 Jun']]}
+    matches:[['Inglaterra','Croacia','17 Jun 17:00'],['Ghana','Panamá','17 Jun 20:00'],['Inglaterra','Ghana','23 Jun 17:00'],['Panamá','Croacia','23 Jun 20:00'],['Panamá','Inglaterra','27 Jun 18:00'],['Croacia','Ghana','27 Jun 18:00']]}
 }
 
 export function flagUrl(name) {
@@ -66,11 +130,13 @@ export function calcStandings(groupKey, predictions) {
     .sort((a,b) => b.pts-a.pts || b.dg-a.dg || b.gf-a.gf)
 }
 
-export function scorePoints(prediction, result) {
+export function scorePoints(prediction, result, isDouble = false) {
   if (!prediction || !result) return { pts: 0, type: null }
   const predWinner = prediction.l > prediction.v ? 'L' : prediction.l < prediction.v ? 'V' : 'E'
   const realWinner = result.l > result.v ? 'L' : result.l < result.v ? 'V' : 'E'
-  if (prediction.l === result.l && prediction.v === result.v) return { pts: 3, type: 'pleno' }
-  if (predWinner === realWinner) return { pts: 1, type: 'parcial' }
-  return { pts: 0, type: 'fallo' }
+  let pts = 0, type = 'fallo'
+  if (prediction.l === result.l && prediction.v === result.v) { pts = 3; type = 'pleno' }
+  else if (predWinner === realWinner) { pts = 1; type = 'parcial' }
+  if (isDouble) pts *= 2
+  return { pts, type, doubled: isDouble && pts > 0 }
 }
