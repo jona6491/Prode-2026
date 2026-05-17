@@ -39,8 +39,9 @@ export default function ReglasTab() {
           🔒 Fechas de cierre
         </div>
         {[
-          ['📅 Fecha 1 y 2','Miércoles 11 de Junio — 15:30hs','30 min antes del primer partido'],
-          ['📅 Fecha 3','Miércoles 24 de Junio — 15:30hs','30 min antes del primer partido'],
+          ['📅 Fecha 1','Miércoles 11 de Junio — 15:30hs','30 min antes del primer partido de Fecha 1'],
+          ['📅 Fecha 2','Miércoles 18 de Junio — 12:30hs','30 min antes del primer partido de Fecha 2'],
+          ['📅 Fecha 3','Miércoles 24 de Junio — 15:30hs','30 min antes del primer partido de Fecha 3'],
         ].map(([title,date,note])=>(
           <div key={title} style={{padding:'12px 15px',borderBottom:'1px solid var(--bd)'}}>
             <div style={{fontSize:13,fontWeight:600,color:'var(--tx)',marginBottom:3}}>{title}</div>
