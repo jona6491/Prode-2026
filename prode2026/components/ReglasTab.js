@@ -97,7 +97,8 @@ export default function ReglasTab() {
           ['⚽','Si un partido se suspende o no se juega, no suma ni resta puntos'],
           ['👤','Cada jugador tiene una clave personal e intransferible'],
           ['📊','El ranking se actualiza automáticamente tras cada partido'],
-                ].map(([icon,text])=>(
+          ['🏆','Clasifican los 2 primeros de cada grupo + 8 mejores terceros (32 equipos a 16vos)'],
+        ].map(([icon,text])=>(
           <div key={text} style={{display:'flex',alignItems:'flex-start',gap:10,padding:'10px 15px',borderBottom:'1px solid var(--bd)',fontSize:13,color:'var(--tx2)'}}>
             <span style={{fontSize:15,flexShrink:0}}>{icon}</span>{text}
           </div>
