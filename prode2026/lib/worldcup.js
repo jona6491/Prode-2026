@@ -18,16 +18,9 @@ export const COUNTRY_CODES = {
 // Fecha 2: 18 Jun 12:30 ARG = 15:30 UTC  
 // Fecha 3: 24 Jun 15:30 ARG = 18:30 UTC
 export const PHASE_DEADLINES = {
-  early: new Date('2026-06-11T18:30:00Z'), // fecha 1+2
-  late:  new Date('2026-06-24T18:30:00Z'), // fecha 3
-}
-
-export function getOpenPhases() {
-  const now = new Date()
-  const phases = []
-  if (now < PHASE_DEADLINES.early) phases.push('early')
-  if (now < PHASE_DEADLINES.late) phases.push('late')
-  return phases
+  f1: new Date('2026-06-11T18:30:00Z'), // Fecha 1
+  f2: new Date('2026-06-18T15:30:00Z'), // Fecha 2
+  f3: new Date('2026-06-24T18:30:00Z'), // Fecha 3
 }
 
 export function isPhaseOpen(phase) {
@@ -35,47 +28,43 @@ export function isPhaseOpen(phase) {
 }
 
 export function getPhaseLabel(phase) {
-  if (phase === 'early') return 'Fecha 1 y 2'
-  if (phase === 'late') return 'Fecha 3'
+  if (phase === 'f1') return 'Fecha 1'
+  if (phase === 'f2') return 'Fecha 2'
+  if (phase === 'f3') return 'Fecha 3'
   return ''
 }
 
 export function getDeadlineText(phase) {
-  if (phase === 'early') return 'Miércoles 11 de Junio a las 15:30hs'
-  if (phase === 'late') return 'Miércoles 24 de Junio a las 15:30hs'
+  if (phase === 'f1') return 'Miércoles 11 de Junio — 15:30hs'
+  if (phase === 'f2') return 'Miércoles 18 de Junio — 12:30hs'
+  if (phase === 'f3') return 'Miércoles 24 de Junio — 15:30hs'
   return ''
 }
 
-// Match keys per phase
-export const EARLY_MATCHES = [ // Fecha 1 (partidos 0) y Fecha 2 (partidos 1-3 por grupo)
-  'A0','A1','A2','A3',
-  'B0','B1','B2','B3',
-  'C0','C1','C2','C3',
-  'D0','D1','D2','D3',
-  'E0','E1','E2','E3',
-  'F0','F1','F2','F3',
-  'G0','G1','G2','G3',
-  'H0','H1','H2','H3',
-  'I0','I1','I2','I3',
-  'J0','J1','J2','J3',
-  'K0','K1','K2','K3',
-  'L0','L1','L2','L3',
+// Match keys per phase — cada grupo tiene 6 partidos (0-5)
+// Fecha 1: partidos 0 y 1 de cada grupo
+// Fecha 2: partidos 2 y 3 de cada grupo
+// Fecha 3: partidos 4 y 5 de cada grupo
+export const F1_MATCHES = [
+  'A0','A1','B0','B1','C0','C1','D0','D1',
+  'E0','E1','F0','F1','G0','G1','H0','H1',
+  'I0','I1','J0','J1','K0','K1','L0','L1',
+]
+export const F2_MATCHES = [
+  'A2','A3','B2','B3','C2','C3','D2','D3',
+  'E2','E3','F2','F3','G2','G3','H2','H3',
+  'I2','I3','J2','J3','K2','K3','L2','L3',
+]
+export const F3_MATCHES = [
+  'A4','A5','B4','B5','C4','C5','D4','D5',
+  'E4','E5','F4','F5','G4','G5','H4','H5',
+  'I4','I5','J4','J5','K4','K5','L4','L5',
 ]
 
-export const LATE_MATCHES = [ // Fecha 3
-  'A4','A5',
-  'B4','B5',
-  'C4','C5',
-  'D4','D5',
-  'E4','E5',
-  'F4','F5',
-  'G4','G5',
-  'H4','H5',
-  'I4','I5',
-  'J4','J5',
-  'K4','K5',
-  'L4','L5',
-]
+export const PHASE_MATCHES = { f1: F1_MATCHES, f2: F2_MATCHES, f3: F3_MATCHES }
+// Keep backward compat
+export const EARLY_MATCHES = [...F1_MATCHES, ...F2_MATCHES]
+export const LATE_MATCHES = F3_MATCHES
 
 export const GROUPS = {
   A:{teams:['México','Corea del Sur','Sudáfrica','Rep. Checa'],
