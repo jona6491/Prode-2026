@@ -1,26 +1,33 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import { GROUPS, EARLY_MATCHES, LATE_MATCHES, flagUrl, calcStandings, isPhaseOpen, getDeadlineText } from '../lib/worldcup'
+import { GROUPS, PHASE_MATCHES, flagUrl, calcStandings, isPhaseOpen, getDeadlineText } from '../lib/worldcup'
 
 const GROUP_KEYS = Object.keys(GROUPS)
+const PHASES = ['f1', 'f2', 'f3']
+const PHASE_LABELS = { f1: 'Fecha 1', f2: 'Fecha 2', f3: 'Fecha 3' }
 
 export default function PronosticosTab({ player, onSaved }) {
   const [selGrp, setSelGrp] = useState('A')
   const [predictions, setPredictions] = useState({})
-  const [savingEarly, setSavingEarly] = useState(false)
-  const [savingLate, setSavingLate] = useState(false)
-  const [savedEarly, setSavedEarly] = useState(player?.saved_early || player?.saved || false)
-  const [savedLate, setSavedLate] = useState(player?.saved_late || false)
-  const [activePhase, setActivePhase] = useState('early') // 'early' or 'late'
+  const [saving, setSaving] = useState(null) // 'f1' | 'f2' | 'f3' | null
+  const [savedPhases, setSavedPhases] = useState({
+    f1: player?.saved_f1 || player?.saved || false,
+    f2: player?.saved_f2 || false,
+    f3: player?.saved_f3 || player?.saved_late || false,
+  })
+  const [activePhase, setActivePhase] = useState('f1')
   const inputRefs = useRef({})
 
-  const earlyOpen = isPhaseOpen('early')
-  const lateOpen = isPhaseOpen('late')
-
   useEffect(() => {
-    if (savedEarly || savedLate) loadSavedPredictions()
-    // Auto-switch to late phase if early is closed
-    if (!earlyOpen && lateOpen) setActivePhase('late')
+    // Determine which phase to show by default
+    if (!isPhaseOpen('f1')) {
+      if (!isPhaseOpen('f2')) setActivePhase('f3')
+      else setActivePhase('f2')
+    }
+    // Load saved predictions if any phase is saved
+    if (player?.saved || player?.saved_early || player?.saved_late || player?.saved_f1 || player?.saved_f2 || player?.saved_f3) {
+      loadSavedPredictions()
+    }
   }, [player])
 
   async function loadSavedPredictions() {
@@ -46,7 +53,7 @@ export default function PronosticosTab({ player, onSaved }) {
   }
 
   function clearGroup(grp) {
-    const phaseKeys = activePhase === 'early' ? EARLY_MATCHES : LATE_MATCHES
+    const phaseKeys = PHASE_MATCHES[activePhase]
     const newPreds = { ...predictions }
     GROUPS[grp].matches.forEach((_, i) => {
       const key = grp + i
@@ -56,7 +63,7 @@ export default function PronosticosTab({ player, onSaved }) {
   }
 
   function countFilledInPhase(grp, phase) {
-    const phaseKeys = phase === 'early' ? EARLY_MATCHES : LATE_MATCHES
+    const phaseKeys = PHASE_MATCHES[phase]
     return GROUPS[grp].matches.filter((_, i) => {
       const key = grp + i
       if (!phaseKeys.includes(key)) return false
@@ -66,22 +73,21 @@ export default function PronosticosTab({ player, onSaved }) {
   }
 
   function totalFilledInPhase(phase) {
-    const phaseKeys = phase === 'early' ? EARLY_MATCHES : LATE_MATCHES
-    return phaseKeys.filter(k => {
+    return PHASE_MATCHES[phase].filter(k => {
       const p = predictions[k]
       return p && p.l !== '' && p.v !== ''
     }).length
   }
 
   function matchesInPhaseForGroup(grp, phase) {
-    const phaseKeys = phase === 'early' ? EARLY_MATCHES : LATE_MATCHES
-    return GROUPS[grp].matches.filter((_, i) => phaseKeys.includes(grp + i)).length
+    return GROUPS[grp].matches.filter((_, i) => PHASE_MATCHES[phase].includes(grp + i)).length
   }
 
   async function handleSave(phase) {
-    const phaseKeys = phase === 'early' ? EARLY_MATCHES : LATE_MATCHES
+    const phaseKeys = PHASE_MATCHES[phase]
     const total = phaseKeys.length
     const filled = totalFilledInPhase(phase)
+
     if (filled < total) {
       const missing = GROUP_KEYS
         .filter(g => countFilledInPhase(g, phase) < matchesInPhaseForGroup(g, phase))
@@ -91,9 +97,7 @@ export default function PronosticosTab({ player, onSaved }) {
       return
     }
 
-    if (phase === 'early') setSavingEarly(true)
-    else setSavingLate(true)
-
+    setSaving(phase)
     const rows = []
     GROUP_KEYS.forEach(grp => {
       GROUPS[grp].matches.forEach((match, i) => {
@@ -109,42 +113,44 @@ export default function PronosticosTab({ player, onSaved }) {
     })
 
     const { error } = await supabase.from('predictions').insert(rows)
-    if (error) { alert('Error al guardar. Intentá de nuevo.'); setSavingEarly(false); setSavingLate(false); return }
+    if (error) { alert('Error al guardar. Intentá de nuevo.'); setSaving(null); return }
 
-    const updateData = phase === 'early' 
-      ? { saved_early: true, saved: true }
-      : { saved_late: true }
+    const updateData = {
+      saved: true,
+      [`saved_${phase}`]: true,
+      ...(phase === 'f1' || phase === 'f2' ? { saved_early: true } : { saved_late: true })
+    }
 
     const { data: updatedPlayer } = await supabase
       .from('players').update(updateData).eq('id', player.id).select().single()
 
-    if (phase === 'early') { setSavingEarly(false); setSavedEarly(true) }
-    else { setSavingLate(false); setSavedLate(true) }
+    setSaving(null)
+    setSavedPhases(prev => ({ ...prev, [phase]: true }))
     if (updatedPlayer) onSaved(updatedPlayer)
   }
 
+  const phaseKeys = PHASE_MATCHES[activePhase]
+  const phaseSaved = savedPhases[activePhase]
+  const phaseOpen = isPhaseOpen(activePhase)
   const standings = calcStandings(selGrp, predictions)
   const grpData = GROUPS[selGrp]
-  const phaseKeys = activePhase === 'early' ? EARLY_MATCHES : LATE_MATCHES
-  const phaseSaved = activePhase === 'early' ? savedEarly : savedLate
-  const phaseOpen = activePhase === 'early' ? earlyOpen : lateOpen
 
   return (
     <div style={{display:'flex', flexDirection:'column', flex:1}}>
-      {/* Phase selector */}
+      {/* Phase tabs */}
       <div style={{display:'flex', background:'var(--bg2)', borderBottom:'1px solid var(--bd)', flexShrink:0}}>
-        {[['early','📅 Fecha 1 y 2'],['late','📅 Fecha 3']].map(([ph, label]) => {
-          const open = ph === 'early' ? earlyOpen : lateOpen
-          const saved = ph === 'early' ? savedEarly : savedLate
+        {PHASES.map(ph => {
+          const open = isPhaseOpen(ph)
+          const saved = savedPhases[ph]
           return (
             <button key={ph} onClick={() => setActivePhase(ph)}
-              style={{flex:1, padding:'10px 6px', fontSize:12, fontWeight:600, background:'none', border:'none',
+              style={{flex:1, padding:'10px 4px', fontSize:12, fontWeight:600, background:'none', border:'none',
                 borderBottom: activePhase===ph ? '2px solid var(--em)' : '2px solid transparent',
                 color: activePhase===ph ? 'var(--em)' : 'var(--tx2)', cursor:'pointer', fontFamily:'inherit',
-                display:'flex', alignItems:'center', justifyContent:'center', gap:6}}>
-              {label}
-              {saved && <span style={{fontSize:10, color:'var(--em)'}}>✅</span>}
-              {!open && !saved && <span style={{fontSize:10, color:'var(--red)'}}>🔒</span>}
+                display:'flex', alignItems:'center', justifyContent:'center', gap:5}}>
+              {PHASE_LABELS[ph]}
+              {saved && <span style={{fontSize:11}}>✅</span>}
+              {!open && !saved && <span style={{fontSize:11}}>🔒</span>}
             </button>
           )
         })}
@@ -153,16 +159,17 @@ export default function PronosticosTab({ player, onSaved }) {
       {/* Info bar */}
       <div className={`info-bar ${phaseSaved ? 'ok' : ''}`} style={{margin:'10px 14px 0', flexShrink:0}}>
         {phaseSaved
-          ? <span>✅ {activePhase === 'early' ? 'Fecha 1 y 2 guardadas' : 'Fecha 3 guardada'}. ¡Seguí el ranking!</span>
+          ? <span>✅ {PHASE_LABELS[activePhase]} guardada. ¡Seguí el ranking!</span>
           : !phaseOpen
-          ? <span>🔒 El plazo para cargar {activePhase === 'early' ? 'Fecha 1 y 2' : 'Fecha 3'} ya cerró.</span>
+          ? <span>🔒 El plazo para {PHASE_LABELS[activePhase]} ya cerró.</span>
           : <span>🔒 Cierre: <strong>{getDeadlineText(activePhase)}</strong> · {totalFilledInPhase(activePhase)}/{phaseKeys.length} cargados</span>
         }
       </div>
 
+      {/* Group pills */}
       <div className="pills" style={{flexShrink:0}}>
         {GROUP_KEYS.map(g => (
-          <button key={g} className={`pill ${selGrp===g?'active':''}`} onClick={()=>setSelGrp(g)}>
+          <button key={g} className={`pill ${selGrp===g?'active':''}`} onClick={() => setSelGrp(g)}>
             Grupo {g}
           </button>
         ))}
@@ -172,7 +179,7 @@ export default function PronosticosTab({ player, onSaved }) {
         <div className="grp-block">
           <div className="grp-bar">
             <h3>
-              Grupo {selGrp}
+              Grupo {selGrp} · {PHASE_LABELS[activePhase]}
               <span className="cnt">{countFilledInPhase(selGrp, activePhase)}/{matchesInPhaseForGroup(selGrp, activePhase)}</span>
             </h3>
             {!phaseSaved && phaseOpen && (
@@ -209,12 +216,11 @@ export default function PronosticosTab({ player, onSaved }) {
 
           {/* Matches */}
           <div className="matches-sec">
-            <div className="matches-lbl">Partidos — Grupo {selGrp}</div>
+            <div className="matches-lbl">Partidos — {PHASE_LABELS[activePhase]} · Grupo {selGrp}</div>
             {grpData.matches.map((match, i) => {
               const key = selGrp + i
-              const isInPhase = phaseKeys.includes(key)
+              if (!phaseKeys.includes(key)) return null
               const pred = predictions[key]
-              if (!isInPhase) return null
               return (
                 <div key={key} className="mrow">
                   <div className="mteam">
@@ -224,7 +230,7 @@ export default function PronosticosTab({ player, onSaved }) {
                   </div>
                   <div className="sbox">
                     {(phaseSaved || !phaseOpen) ? (
-                      <><div className="lkd">{pred?.l ?? '-'}</div><span className="sdash">-</span><div className="lkd">{pred?.v ?? '-'}</div></>
+                      <><div className="lkd">{pred?.l??'-'}</div><span className="sdash">-</span><div className="lkd">{pred?.v??'-'}</div></>
                     ) : (
                       <>
                         <input className="sinp" type="number" min="0" max="20" value={pred?.l??''} placeholder="0"
@@ -248,8 +254,11 @@ export default function PronosticosTab({ player, onSaved }) {
 
       {!phaseSaved && phaseOpen && (
         <div className="save-footer">
-          <button className="btn" onClick={() => handleSave(activePhase)} disabled={savingEarly || savingLate}>
-            {(savingEarly || savingLate) ? '⏳ Guardando...' : `💾 Guardar ${activePhase === 'early' ? 'Fecha 1 y 2' : 'Fecha 3'} (${totalFilledInPhase(activePhase)}/${phaseKeys.length})`}
+          <button className="btn" onClick={() => handleSave(activePhase)} disabled={saving !== null}>
+            {saving === activePhase
+              ? '⏳ Guardando...'
+              : `💾 Guardar ${PHASE_LABELS[activePhase]} (${totalFilledInPhase(activePhase)}/${phaseKeys.length})`
+            }
           </button>
         </div>
       )}
