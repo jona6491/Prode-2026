@@ -7,7 +7,7 @@ export default function ReglasTab() {
         <span style={{fontSize:18,flexShrink:0}}>⚠️</span>
         <div>
           <div style={{fontSize:13,fontWeight:700,color:'var(--red)',marginBottom:4}}>El cierre es automático</div>
-          <div style={{fontSize:12,color:'var(--tx2)',lineHeight:1.6}}>Una vez cerrado el plazo, no se pueden cargar ni modificar pronósticos. El que no carga a tiempo pierde la oportunidad.</div>
+          <div style={{fontSize:12,color:'var(--tx2)',lineHeight:1.6}}>Una vez cerrados los plazos, no se pueden cargar ni modificar pronósticos. El que no carga a tiempo pierde la oportunidad.</div>
         </div>
       </div>
 
@@ -18,7 +18,8 @@ export default function ReglasTab() {
         </div>
         {[
           ['🥇 Campeón Fecha 1','Mejor puntaje al término de la primera fecha','$40.000','var(--gold)'],
-          ['🏆 Campeón Fase de Grupos','Mejor puntaje al final de las 3 fechas','Resto del pozo','var(--em)'],
+          ['🏆 Campeón Fase de Grupos','Mejor puntaje al final de las 3 fechas','80% resto','var(--em)'],
+          ['🥈 Segundo Fase de Grupos','Segundo mejor puntaje al final de las 3 fechas','20% resto','var(--em)'],
         ].map(([title,desc,prize,color])=>(
           <div key={title} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 15px',borderBottom:'1px solid var(--bd)',gap:10}}>
             <div>
@@ -29,7 +30,7 @@ export default function ReglasTab() {
           </div>
         ))}
         <div style={{padding:'10px 15px',fontSize:11,color:'var(--tx3)'}}>
-          Inscripción: $10.000 por jugador. Los montos exactos se confirman antes del inicio del torneo.
+          Inscripción: $10.000 por jugador.
         </div>
       </div>
 
@@ -97,7 +98,7 @@ export default function ReglasTab() {
           ['🔒','Una vez guardados, los pronósticos no se pueden modificar'],
           ['⚽','Si un partido se suspende o no se juega, no suma ni resta puntos'],
           ['👤','Cada jugador tiene una clave personal e intransferible'],
-          ['📊','El ranking se actualiza automáticamente tras cada partido'],
+          ['📊','El ranking se actualiza automáticamente tras cada fecha'],
         
         ].map(([icon,text])=>(
           <div key={text} style={{display:'flex',alignItems:'flex-start',gap:10,padding:'10px 15px',borderBottom:'1px solid var(--bd)',fontSize:13,color:'var(--tx2)'}}>
@@ -107,7 +108,7 @@ export default function ReglasTab() {
       </div>
 
       <div style={{padding:'12px 14px',background:'var(--bg2)',border:'1px solid var(--bd)',borderRadius:11,fontSize:11,color:'var(--tx3)',textAlign:'center',marginBottom:10}}>
-        🏆 Mundial 2026 · OFICIAL FIFA 11 Jun — 27 Jun 2026
+        🏆 Mundial 2026 · RECONTRAOFICIAL FIFA 11 Jun — 27 Jun 2026
       </div>
     </div>
   )
