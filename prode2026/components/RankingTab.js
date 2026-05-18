@@ -166,7 +166,7 @@ export default function RankingTab({ player, transparencyEnabled: transparencyPr
         </div>
       )}
       {playedMatches===0 && (
-        <div style={{fontSize:11,color:'var(--tx3)',marginBottom:10,padding:'8px 12px',background:'var(--bg3)',borderRadius:8}}>
+        <div style={{fontSize:11,color:'var(--tx3)',marginBottom:10,padding:'9px 14px',background:'var(--bg3)',borderRadius:8}}>
           ⏳ Los puntos se actualizarán cuando el organizador cargue los resultados.
         </div>
       )}
