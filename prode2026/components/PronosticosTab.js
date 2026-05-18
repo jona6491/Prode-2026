@@ -125,7 +125,7 @@ export default function PronosticosTab({ player, onSaved }) {
 
     if (incomplete.length > 0) {
       const names = incomplete.map(g => `• Grupo ${g}: faltan ${matchesInPhaseForGroup(g, phase) - countFilledInPhase(g, phase)} partido${matchesInPhaseForGroup(g, phase) - countFilledInPhase(g, phase) > 1 ? 's' : ''}`).join('\n')
-      const proceed = window.confirm(`⚠️ Estos grupos están incompletos y NO se van a guardar:\n\n${names}\n\n¿Guardás igual los grupos completos?`)
+      const proceed = window.confirm(`⚠️ CARNERO! ⚠️faltan grupos y NO se van a guardar, no te olvides:\n\n${names}\n\n¿Guardás igual los grupos completos?`)
       if (!proceed) return
     }
 
