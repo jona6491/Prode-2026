@@ -30,7 +30,7 @@ export default function ReglasTab() {
           </div>
         ))}
         <div style={{padding:'10px 15px',fontSize:11,color:'var(--tx3)'}}>
-          Inscripción: $10.000 por jugador.
+          Inscripción: $10.000 por jugador ALIAS: JONA.7.
         </div>
       </div>
 
