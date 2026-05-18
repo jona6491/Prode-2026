@@ -9,38 +9,43 @@ const PHASE_LABELS = { f1: 'Fecha 1', f2: 'Fecha 2', f3: 'Fecha 3' }
 export default function PronosticosTab({ player, onSaved }) {
   const [selGrp, setSelGrp] = useState('A')
   const [predictions, setPredictions] = useState({})
-  const [saving, setSaving] = useState(null) // 'f1' | 'f2' | 'f3' | null
+  const [saving, setSaving] = useState(false)
   const [savedPhases, setSavedPhases] = useState({
     f1: player?.saved_f1 || player?.saved || false,
     f2: player?.saved_f2 || false,
     f3: player?.saved_f3 || player?.saved_late || false,
   })
+  // savedKeys tracks which match_keys are already in DB
+  const [savedKeys, setSavedKeys] = useState(new Set())
   const [activePhase, setActivePhase] = useState('f1')
   const inputRefs = useRef({})
 
   useEffect(() => {
-    // Determine which phase to show by default
     if (!isPhaseOpen('f1')) {
       if (!isPhaseOpen('f2')) setActivePhase('f3')
       else setActivePhase('f2')
     }
-    // Load saved predictions if any phase is saved
-    if (player?.saved || player?.saved_early || player?.saved_late || player?.saved_f1 || player?.saved_f2 || player?.saved_f3) {
-      loadSavedPredictions()
-    }
+    loadSavedPredictions()
   }, [player])
 
   async function loadSavedPredictions() {
     const { data } = await supabase.from('predictions').select('*').eq('player_id', player.id)
-    if (data) {
+    if (data && data.length > 0) {
       const map = {}
-      data.forEach(d => { map[d.match_key] = { l: d.goals_local, v: d.goals_visitor } })
+      const keys = new Set()
+      data.forEach(d => {
+        map[d.match_key] = { l: d.goals_local, v: d.goals_visitor }
+        keys.add(d.match_key)
+      })
       setPredictions(map)
+      setSavedKeys(keys)
     }
   }
 
   function updatePred(grp, idx, side, val) {
     const key = grp + idx
+    // Can't edit already saved keys
+    if (savedKeys.has(key)) return
     const num = val === '' ? '' : Math.max(0, Math.min(20, parseInt(val) || 0))
     setPredictions(prev => ({ ...prev, [key]: { ...(prev[key] || { l: '', v: '' }), [side]: num } }))
   }
@@ -57,7 +62,7 @@ export default function PronosticosTab({ player, onSaved }) {
     const newPreds = { ...predictions }
     GROUPS[grp].matches.forEach((_, i) => {
       const key = grp + i
-      if (phaseKeys.includes(key)) delete newPreds[key]
+      if (phaseKeys.includes(key) && !savedKeys.has(key)) delete newPreds[key]
     })
     setPredictions(newPreds)
   }
@@ -72,6 +77,20 @@ export default function PronosticosTab({ player, onSaved }) {
     }).length
   }
 
+  function matchesInPhaseForGroup(grp, phase) {
+    return GROUPS[grp].matches.filter((_, i) => PHASE_MATCHES[phase].includes(grp + i)).length
+  }
+
+  function isGroupComplete(grp, phase) {
+    return countFilledInPhase(grp, phase) === matchesInPhaseForGroup(grp, phase)
+  }
+
+  function isGroupSaved(grp, phase) {
+    const phaseKeys = PHASE_MATCHES[phase]
+    const grpPhaseKeys = GROUPS[grp].matches.map((_, i) => grp + i).filter(k => phaseKeys.includes(k))
+    return grpPhaseKeys.every(k => savedKeys.has(k))
+  }
+
   function totalFilledInPhase(phase) {
     return PHASE_MATCHES[phase].filter(k => {
       const p = predictions[k]
@@ -79,30 +98,43 @@ export default function PronosticosTab({ player, onSaved }) {
     }).length
   }
 
-  function matchesInPhaseForGroup(grp, phase) {
-    return GROUPS[grp].matches.filter((_, i) => PHASE_MATCHES[phase].includes(grp + i)).length
+  function totalSavedInPhase(phase) {
+    return PHASE_MATCHES[phase].filter(k => savedKeys.has(k)).length
+  }
+
+  function incompleteGroupsInPhase(phase) {
+    return GROUP_KEYS.filter(g => {
+      if (isGroupSaved(g, phase)) return false
+      return !isGroupComplete(g, phase) && countFilledInPhase(g, phase) > 0 ||
+             countFilledInPhase(g, phase) < matchesInPhaseForGroup(g, phase)
+    }).filter(g => !isGroupSaved(g, phase) && countFilledInPhase(g, phase) < matchesInPhaseForGroup(g, phase))
+  }
+
+  function newCompleteGroupsInPhase(phase) {
+    return GROUP_KEYS.filter(g => isGroupComplete(g, phase) && !isGroupSaved(g, phase))
   }
 
   async function handleSave(phase) {
-    const phaseKeys = PHASE_MATCHES[phase]
-    const total = phaseKeys.length
-    const filled = totalFilledInPhase(phase)
+    const completeGroups = newCompleteGroupsInPhase(phase)
+    const incomplete = incompleteGroupsInPhase(phase)
 
-    if (filled < total) {
-      const missing = GROUP_KEYS
-        .filter(g => countFilledInPhase(g, phase) < matchesInPhaseForGroup(g, phase))
-        .map(g => `• Grupo ${g}: faltan ${matchesInPhaseForGroup(g, phase) - countFilledInPhase(g, phase)} partido${matchesInPhaseForGroup(g, phase) - countFilledInPhase(g, phase) > 1 ? 's' : ''}`)
-        .join('\n')
-      alert(`🚨 ¡CARNERO! Te falta cargar:\n\n${missing}`)
+    if (completeGroups.length === 0 && incomplete.length > 0) {
+      alert(`🚨 ¡CARNERO! No tenés ningún grupo completo para guardar.\n\nCompletá al menos un grupo entero antes de guardar.`)
       return
     }
 
-    setSaving(phase)
+    if (incomplete.length > 0) {
+      const names = incomplete.map(g => `• Grupo ${g}: faltan ${matchesInPhaseForGroup(g, phase) - countFilledInPhase(g, phase)} partido${matchesInPhaseForGroup(g, phase) - countFilledInPhase(g, phase) > 1 ? 's' : ''}`).join('\n')
+      const proceed = window.confirm(`⚠️ Estos grupos están incompletos y NO se van a guardar:\n\n${names}\n\n¿Guardás igual los grupos completos?`)
+      if (!proceed) return
+    }
+
+    setSaving(true)
     const rows = []
-    GROUP_KEYS.forEach(grp => {
+    completeGroups.forEach(grp => {
       GROUPS[grp].matches.forEach((match, i) => {
         const key = grp + i
-        if (!phaseKeys.includes(key)) return
+        if (!PHASE_MATCHES[phase].includes(key)) return
         const p = predictions[key]
         rows.push({
           player_id: player.id, match_key: key, group_key: grp,
@@ -113,27 +145,34 @@ export default function PronosticosTab({ player, onSaved }) {
     })
 
     const { error } = await supabase.from('predictions').insert(rows)
-    if (error) { alert('Error al guardar. Intentá de nuevo.'); setSaving(null); return }
+    if (error) { alert('Error al guardar. Intentá de nuevo.'); setSaving(false); return }
+
+    // Check if all groups in phase are now saved
+    const newSavedKeys = new Set([...savedKeys, ...rows.map(r => r.match_key)])
+    const allSaved = PHASE_MATCHES[phase].every(k => newSavedKeys.has(k))
 
     const updateData = {
       saved: true,
-      [`saved_${phase}`]: true,
-      ...(phase === 'f1' || phase === 'f2' ? { saved_early: true } : { saved_late: true })
+      ...(allSaved ? { [`saved_${phase}`]: true } : {}),
+      ...((phase === 'f1' || phase === 'f2') ? { saved_early: true } : { saved_late: true })
     }
 
     const { data: updatedPlayer } = await supabase
       .from('players').update(updateData).eq('id', player.id).select().single()
 
-    setSaving(null)
-    setSavedPhases(prev => ({ ...prev, [phase]: true }))
+    setSavedKeys(newSavedKeys)
+    if (allSaved) setSavedPhases(prev => ({ ...prev, [phase]: true }))
+    setSaving(false)
     if (updatedPlayer) onSaved(updatedPlayer)
   }
 
   const phaseKeys = PHASE_MATCHES[activePhase]
-  const phaseSaved = savedPhases[activePhase]
   const phaseOpen = isPhaseOpen(activePhase)
+  const phaseSaved = savedPhases[activePhase]
   const standings = calcStandings(selGrp, predictions)
   const grpData = GROUPS[selGrp]
+  const savedInPhase = totalSavedInPhase(activePhase)
+  const totalInPhase = phaseKeys.length
 
   return (
     <div style={{display:'flex', flexDirection:'column', flex:1}}>
@@ -142,6 +181,8 @@ export default function PronosticosTab({ player, onSaved }) {
         {PHASES.map(ph => {
           const open = isPhaseOpen(ph)
           const saved = savedPhases[ph]
+          const savedCount = totalSavedInPhase(ph)
+          const total = PHASE_MATCHES[ph].length
           return (
             <button key={ph} onClick={() => setActivePhase(ph)}
               style={{flex:1, padding:'10px 4px', fontSize:12, fontWeight:600, background:'none', border:'none',
@@ -149,8 +190,14 @@ export default function PronosticosTab({ player, onSaved }) {
                 color: activePhase===ph ? 'var(--em)' : 'var(--tx2)', cursor:'pointer', fontFamily:'inherit',
                 display:'flex', alignItems:'center', justifyContent:'center', gap:5}}>
               {PHASE_LABELS[ph]}
-              {saved && <span style={{fontSize:11}}>✅</span>}
-              {!open && !saved && <span style={{fontSize:11}}>🔒</span>}
+              {saved
+                ? <span style={{fontSize:11}}>✅</span>
+                : savedCount > 0
+                ? <span style={{fontSize:10, color:'var(--gold)'}}>{savedCount}/{total}</span>
+                : !open
+                ? <span style={{fontSize:11}}>🔒</span>
+                : null
+              }
             </button>
           )
         })}
@@ -159,30 +206,50 @@ export default function PronosticosTab({ player, onSaved }) {
       {/* Info bar */}
       <div className={`info-bar ${phaseSaved ? 'ok' : ''}`} style={{margin:'10px 14px 0', flexShrink:0}}>
         {phaseSaved
-          ? <span>✅ {PHASE_LABELS[activePhase]} guardada. ¡Seguí el ranking!</span>
+          ? <span>✅ {PHASE_LABELS[activePhase]} completa. ¡Seguí el ranking!</span>
           : !phaseOpen
           ? <span>🔒 El plazo para {PHASE_LABELS[activePhase]} ya cerró.</span>
-          : <span>🔒 Cierre: <strong>{getDeadlineText(activePhase)}</strong> · {totalFilledInPhase(activePhase)}/{phaseKeys.length} cargados</span>
+          : savedInPhase > 0
+          ? <span>💾 {savedInPhase}/{totalInPhase} partidos guardados · Cierre: <strong>{getDeadlineText(activePhase)}</strong></span>
+          : <span>🔒 Cierre: <strong>{getDeadlineText(activePhase)}</strong> · Podés guardar por partes</span>
         }
       </div>
 
       {/* Group pills */}
       <div className="pills" style={{flexShrink:0}}>
-        {GROUP_KEYS.map(g => (
-          <button key={g} className={`pill ${selGrp===g?'active':''}`} onClick={() => setSelGrp(g)}>
-            Grupo {g}
-          </button>
-        ))}
+        {GROUP_KEYS.map(g => {
+          const saved = isGroupSaved(g, activePhase)
+          const complete = isGroupComplete(g, activePhase)
+          const filled = countFilledInPhase(g, activePhase)
+          const total = matchesInPhaseForGroup(g, activePhase)
+          const incomplete = filled > 0 && !complete && !saved
+          return (
+            <button key={g}
+              onClick={() => setSelGrp(g)}
+              style={{
+                padding:'4px 12px', borderRadius:20, fontSize:11, fontWeight:700,
+                cursor:'pointer', fontFamily:'inherit',
+                border: incomplete ? '1px solid rgba(239,83,80,0.6)' : '1px solid var(--bd2)',
+                background: selGrp===g
+                  ? (incomplete ? 'rgba(239,83,80,0.8)' : 'var(--em)')
+                  : (incomplete ? 'rgba(239,83,80,0.12)' : 'transparent'),
+                color: selGrp===g ? '#fff' : incomplete ? 'var(--red)' : saved ? 'var(--em)' : 'var(--tx2)',
+              }}>
+              {g} {saved ? '✅' : complete ? '✓' : filled > 0 ? `${filled}/${total}` : ''}
+            </button>
+          )
+        })}
       </div>
 
-      <div style={{flex:1, overflowY:'auto', paddingBottom: (!phaseSaved && phaseOpen) ? 0 : 12}}>
+      <div style={{flex:1, overflowY:'auto', paddingBottom: phaseOpen && !phaseSaved ? 0 : 12}}>
         <div className="grp-block">
           <div className="grp-bar">
             <h3>
               Grupo {selGrp} · {PHASE_LABELS[activePhase]}
               <span className="cnt">{countFilledInPhase(selGrp, activePhase)}/{matchesInPhaseForGroup(selGrp, activePhase)}</span>
+              {isGroupSaved(selGrp, activePhase) && <span style={{fontSize:11, color:'var(--em)'}}>✅ guardado</span>}
             </h3>
-            {!phaseSaved && phaseOpen && (
+            {phaseOpen && !isGroupSaved(selGrp, activePhase) && (
               <button className="btn-danger" onClick={() => clearGroup(selGrp)}>🗑 Limpiar</button>
             )}
           </div>
@@ -221,23 +288,33 @@ export default function PronosticosTab({ player, onSaved }) {
               const key = selGrp + i
               if (!phaseKeys.includes(key)) return null
               const pred = predictions[key]
+              const isSaved = savedKeys.has(key)
+              const locked = isSaved || !phaseOpen
               return (
-                <div key={key} className="mrow">
+                <div key={key} className="mrow" style={{opacity: locked && !isSaved ? 0.6 : 1}}>
                   <div className="mteam">
                     {flagUrl(match[0])?<img src={flagUrl(match[0])} className="mflag" alt={match[0]}/>:<span style={{fontSize:20}}>🏳</span>}
                     <span className="mnm">{match[0]}</span>
                     <span className="mdate">{match[2]}</span>
                   </div>
                   <div className="sbox">
-                    {(phaseSaved || !phaseOpen) ? (
-                      <><div className="lkd">{pred?.l??'-'}</div><span className="sdash">-</span><div className="lkd">{pred?.v??'-'}</div></>
+                    {locked ? (
+                      <>
+                        <div className="lkd">{pred?.l??'-'}</div>
+                        <span className="sdash">-</span>
+                        <div className="lkd">{pred?.v??'-'}</div>
+                      </>
                     ) : (
                       <>
-                        <input className="sinp" type="number" min="0" max="20" value={pred?.l??''} placeholder="0"
-                          ref={el=>inputRefs.current[`l_${key}`]=el} onChange={e=>handleInput(selGrp,i,'l',e.target.value)}/>
+                        <input className="sinp" type="number" min="0" max="20"
+                          value={pred?.l??''} placeholder="-"
+                          ref={el=>inputRefs.current[`l_${key}`]=el}
+                          onChange={e=>handleInput(selGrp,i,'l',e.target.value)}/>
                         <span className="sdash">-</span>
-                        <input className="sinp" type="number" min="0" max="20" value={pred?.v??''} placeholder="0"
-                          ref={el=>inputRefs.current[`v_${key}`]=el} onChange={e=>updatePred(selGrp,i,'v',e.target.value)}/>
+                        <input className="sinp" type="number" min="0" max="20"
+                          value={pred?.v??''} placeholder="-"
+                          ref={el=>inputRefs.current[`v_${key}`]=el}
+                          onChange={e=>updatePred(selGrp,i,'v',e.target.value)}/>
                       </>
                     )}
                   </div>
@@ -252,12 +329,14 @@ export default function PronosticosTab({ player, onSaved }) {
         </div>
       </div>
 
-      {!phaseSaved && phaseOpen && (
+      {phaseOpen && !phaseSaved && (
         <div className="save-footer">
-          <button className="btn" onClick={() => handleSave(activePhase)} disabled={saving !== null}>
-            {saving === activePhase
+          <button className="btn" onClick={() => handleSave(activePhase)} disabled={saving}>
+            {saving
               ? '⏳ Guardando...'
-              : `💾 Guardar ${PHASE_LABELS[activePhase]} (${totalFilledInPhase(activePhase)}/${phaseKeys.length})`
+              : newCompleteGroupsInPhase(activePhase).length > 0
+              ? `💾 Guardar grupos completos de ${PHASE_LABELS[activePhase]} (${newCompleteGroupsInPhase(activePhase).length} grupos)`
+              : `💾 Guardar ${PHASE_LABELS[activePhase]}`
             }
           </button>
         </div>
