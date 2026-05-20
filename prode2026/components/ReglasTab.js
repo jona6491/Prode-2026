@@ -17,9 +17,9 @@ export default function ReglasTab() {
           💰 Premios
         </div>
         {[
-          ['🥇 Campeón Fecha 1','Mejor puntaje al término de la primera fecha','$40.000','var(--gold)'],
-          ['🏆 Campeón total','Mejor puntaje al final de las 3 fechas','80% resto','var(--em)'],
-          ['🏆 Segundo total','Segundo mejor puntaje al final de las 3 fechas','20% resto','var(--em)'],
+         ['🥇 Campeón Fecha 1','Mejor puntaje al término de la primera fecha','$40.000','var(--gold)'],
+['🏆 1° Fase de Grupos','Mejor puntaje al final de las 3 fechas','80% del pozo','var(--em)'],
+['🥈 2° Fase de Grupos','Segundo mejor puntaje al final de las 3 fechas','20% del pozo','#60a5fa'],
         ].map(([title,desc,prize,color])=>(
           <div key={title} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 15px',borderBottom:'1px solid var(--bd)',gap:10}}>
             <div>
@@ -40,7 +40,7 @@ export default function ReglasTab() {
           🔒 Fechas de cierre
         </div>
         {[
-          '📅 Fecha 1','Miércoles 11 de Junio — 15:30hs','30 min antes del primer partido de Fecha 1'],
+          ['📅 Fecha 1','Miércoles 11 de Junio — 15:30hs','30 min antes del primer partido de Fecha 1'],
           ['📅 Fecha 2','Miércoles 18 de Junio — 12:30hs','30 min antes del primer partido de Fecha 2'],
           ['📅 Fecha 3','Miércoles 24 de Junio — 15:30hs','30 min antes del primer partido'],
         ].map(([title,date,note])=>(
