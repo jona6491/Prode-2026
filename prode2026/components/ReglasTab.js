@@ -18,7 +18,8 @@ export default function ReglasTab() {
         </div>
         {[
           ['🥇 Campeón Fecha 1','Mejor puntaje al término de la primera fecha','$40.000','var(--gold)'],
-          ['🏆 Campeón Fase de Grupos','Mejor puntaje al final de las 3 fechas','Resto del pozo','var(--em)'],
+          ['🏆 Campeón total','Mejor puntaje al final de las 3 fechas','80% resto','var(--em)'],
+          ['🏆 Segundo total','Segundo mejor puntaje al final de las 3 fechas','20% resto','var(--em)'],
         ].map(([title,desc,prize,color])=>(
           <div key={title} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 15px',borderBottom:'1px solid var(--bd)',gap:10}}>
             <div>
@@ -39,7 +40,8 @@ export default function ReglasTab() {
           🔒 Fechas de cierre
         </div>
         {[
-          ['📅 Fecha 1 y 2','Miércoles 11 de Junio — 15:30hs','30 min antes del primer partido'],
+          '📅 Fecha 1','Miércoles 11 de Junio — 15:30hs','30 min antes del primer partido de Fecha 1'],
+          ['📅 Fecha 2','Miércoles 18 de Junio — 12:30hs','30 min antes del primer partido de Fecha 2'],
           ['📅 Fecha 3','Miércoles 24 de Junio — 15:30hs','30 min antes del primer partido'],
         ].map(([title,date,note])=>(
           <div key={title} style={{padding:'12px 15px',borderBottom:'1px solid var(--bd)'}}>
@@ -96,8 +98,7 @@ export default function ReglasTab() {
           ['🔒','Una vez guardados, los pronósticos no se pueden modificar'],
           ['⚽','Si un partido se suspende o no se juega, no suma ni resta puntos'],
           ['👤','Cada jugador tiene una clave personal e intransferible'],
-          ['📊','El ranking se actualiza automáticamente tras cada partido'],
-          ['🏆','Clasifican los 2 primeros de cada grupo + 8 mejores terceros (32 equipos a 16vos)'],
+          ['📊','El ranking se actualiza automáticamente tras cada fecha'],          
         ].map(([icon,text])=>(
           <div key={text} style={{display:'flex',alignItems:'flex-start',gap:10,padding:'10px 15px',borderBottom:'1px solid var(--bd)',fontSize:13,color:'var(--tx2)'}}>
             <span style={{fontSize:15,flexShrink:0}}>{icon}</span>{text}
@@ -106,7 +107,7 @@ export default function ReglasTab() {
       </div>
 
       <div style={{padding:'12px 14px',background:'var(--bg2)',border:'1px solid var(--bd)',borderRadius:11,fontSize:11,color:'var(--tx3)',textAlign:'center',marginBottom:10}}>
-        ⚽ Mundial 2026 · USA, Canadá y México · Fase de Grupos: 11 Jun — 27 Jun 2026
+        ⚽ Mundial 2026 · Fase de Grupos: 11 Jun — 27 Jun 2026
       </div>
     </div>
   )
