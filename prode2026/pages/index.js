@@ -134,7 +134,7 @@ export default function Home() {
             <div className="card" style={{maxWidth:320,width:'100%'}}>
               <div style={{textAlign:'center',marginBottom:22}}>
                 <div style={{fontSize:44,marginBottom:8}}>⚽</div>
-                <h2 style={{fontSize:18,fontWeight:700,color:'var(--tx)',marginBottom:5}}>Prode Mundial 2026</h2>
+                <h2 style={{fontSize:20,fontWeight:700,color:'var(--tx)',marginBottom:5}}>ProDe Mundial 2026</h2>
                 <p style={{fontSize:12,color:'var(--tx2)'}}>Ingresá la clave que te dio el organizador</p>
               </div>
               <div className="field">
