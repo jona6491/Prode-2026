@@ -192,9 +192,7 @@ export default function Home() {
              <div style={{padding:'10px 14px',textAlign:'center',fontSize:11,color:'var(--tx3)',borderTop:'1px solid var(--bd)',flexShrink:0}}>
   ⚽ Mundial 2026 · RECONTRAOFICIAL FIFA · 11 Jun — 27 Jun 2026
 </div>
-             <div style={{padding:'10px 14px',textAlign:'center',fontSize:11,color:'var(--tx3)',borderTop:'1px solid var(--bd)',flexShrink:0}}>
-  ⚽ Mundial 2026 · RECONTRAOFICIAL FIFA · 11 Jun — 27 Jun 2026
-</div>
+             
             {tab==='admin' && adminUnlocked && <AdminPanel onClose={()=>{setAdminUnlocked(false);setTab('pronosticos')}} currentPlayer={player} transparencyEnabled={transparencyEnabled} setTransparencyEnabled={setTransparencyEnabled} />}
           </>
         )}
