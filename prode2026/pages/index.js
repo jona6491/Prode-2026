@@ -86,7 +86,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Prode Mundial 2026</title>
+        <title>ProDe Mundial 2026</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#18191f" />
         <link rel="icon" href="/TROFEO.png" />
