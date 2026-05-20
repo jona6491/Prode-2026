@@ -106,9 +106,7 @@ export default function ReglasTab() {
         ))}
       </div>
 
-      <div style={{padding:'12px 14px',background:'var(--bg2)',border:'1px solid var(--bd)',borderRadius:11,fontSize:11,color:'var(--tx3)',textAlign:'center',marginBottom:10}}>
-        ⚽ Mundial 2026 · Fase de Grupos: 11 Jun — 27 Jun 2026
-      </div>
+    
     </div>
   )
 }
