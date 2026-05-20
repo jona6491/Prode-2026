@@ -89,11 +89,11 @@ export default function Home() {
         <title>Prode Mundial 2026</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#18191f" />
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>" />
+        <link rel="icon" href="/trofeo.png" />
       </Head>
       <div className="wrap">
         <div className="hdr">
-          <span className="hdr-ico">⚽</span>
+          <img src="/trofeo.png" style={{width:34,height:34,objectFit:'contain'}} alt="trofeo" />
           <div style={{flex:1}}>
             <div className="hdr-title">Prode Mundial 2026</div>
             <div className="hdr-sub">{player ? player.team_name : 'Ingresá con tu clave para participar'}</div>
