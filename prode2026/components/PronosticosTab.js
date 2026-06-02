@@ -11,7 +11,7 @@ export default function PronosticosTab({ player, onSaved }) {
   const [predictions, setPredictions] = useState({})
   const [saving, setSaving] = useState(false)
   const [savedPhases, setSavedPhases] = useState({
-    f1: player?.saved_f1 || player?.saved || false,
+    f1: false,
     f2: player?.saved_f2 || false,
     f3: player?.saved_f3 || player?.saved_late || false,
   })
