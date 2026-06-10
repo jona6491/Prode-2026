@@ -4,7 +4,7 @@ import { GROUPS, PHASE_MATCHES, flagUrl, calcStandings, isPhaseOpen, getDeadline
 
 // Export PDF function - runs entirely in browser
 async function exportToPDF(player, predictions, savedKeys) {
-  const { jsPDF } = await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
+  const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   
   const GROUPS = ['A','B','C','D','E','F','G','H','I','J','K','L']
