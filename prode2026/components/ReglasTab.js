@@ -29,7 +29,7 @@ export default function ReglasTab() {
             <span style={{fontSize:13,fontWeight:700,color,whiteSpace:'nowrap',flexShrink:0}}>{prize}</span>
           </div>
         ))}
-        <div style={{padding:'10px 15px',fontSize:11,color:'var(--tx3)'}}>
+        <div style={{padding:'12px 18px',fontSize:14,color:'var(--tx3)'}}>
           Inscripción: $10.000 por jugador. · ALIAS: JONA.7
         </div>
       </div>
