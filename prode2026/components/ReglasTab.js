@@ -18,8 +18,8 @@ export default function ReglasTab() {
         </div>
         {[
          ['🥇 Campeón Fecha 1','Mejor puntaje al término de la primera fecha','$40.000','var(--gold)'],
-['🏆 1° Fase de Grupos','Mejor puntaje al final de las 3 fechas','80% del pozo','var(--em)'],
-['🥈 2° Fase de Grupos','Segundo mejor puntaje al final de las 3 fechas','20% del pozo','#60a5fa'],
+['🏆 1° Fase de Grupos','Mejor puntaje al final de las 3 fechas','80% del pozo restante','var(--em)'],
+['🥈 2° Fase de Grupos','Segundo mejor puntaje al final de las 3 fechas','20% del pozo restante','#60a5fa'],
         ].map(([title,desc,prize,color])=>(
           <div key={title} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 15px',borderBottom:'1px solid var(--bd)',gap:10}}>
             <div>
