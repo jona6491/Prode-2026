@@ -2,6 +2,117 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { GROUPS, PHASE_MATCHES, flagUrl, calcStandings, isPhaseOpen, getDeadlineText } from '../lib/worldcup'
 
+// Export PDF function - runs entirely in browser
+async function exportToPDF(player, predictions, savedKeys) {
+  const { jsPDF } = await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+  
+  const GROUPS = ['A','B','C','D','E','F','G','H','I','J','K','L']
+  const GROUP_DATA = {
+    A:[['México','Sudáfrica'],['Corea del Sur','Rep. Checa'],['Rep. Checa','Sudáfrica'],['México','Corea del Sur'],['Rep. Checa','México'],['Sudáfrica','Corea del Sur']],
+    B:[['Canadá','Bosnia y Herz.'],['Qatar','Suiza'],['Suiza','Bosnia y Herz.'],['Canadá','Qatar'],['Suiza','Canadá'],['Bosnia y Herz.','Qatar']],
+    C:[['Brasil','Marruecos'],['Haití','Escocia'],['Escocia','Marruecos'],['Brasil','Haití'],['Escocia','Brasil'],['Marruecos','Haití']],
+    D:[['Estados Unidos','Paraguay'],['Australia','Turquía'],['Turquía','Paraguay'],['Estados Unidos','Australia'],['Turquía','Estados Unidos'],['Paraguay','Australia']],
+    E:[['Alemania','Curazao'],['Costa de Marfil','Ecuador'],['Alemania','Costa de Marfil'],['Ecuador','Curazao'],['Ecuador','Alemania'],['Curazao','Costa de Marfil']],
+    F:[['Países Bajos','Japón'],['Suecia','Túnez'],['Países Bajos','Suecia'],['Túnez','Japón'],['Japón','Suecia'],['Túnez','Países Bajos']],
+    G:[['Irán','Nueva Zelanda'],['Bélgica','Egipto'],['Bélgica','Irán'],['Nueva Zelanda','Egipto'],['Egipto','Irán'],['Nueva Zelanda','Bélgica']],
+    H:[['España','Cabo Verde'],['Arabia Saudita','Uruguay'],['España','Arabia Saudita'],['Uruguay','Cabo Verde'],['Cabo Verde','Arabia Saudita'],['Uruguay','España']],
+    I:[['Francia','Senegal'],['Iraq','Noruega'],['Francia','Iraq'],['Noruega','Senegal'],['Noruega','Francia'],['Senegal','Iraq']],
+    J:[['Argentina','Argelia'],['Austria','Jordania'],['Argentina','Austria'],['Jordania','Argelia'],['Argelia','Austria'],['Jordania','Argentina']],
+    K:[['Portugal','RD del Congo'],['Uzbekistán','Colombia'],['Portugal','Uzbekistán'],['Colombia','RD del Congo'],['Colombia','Portugal'],['RD del Congo','Uzbekistán']],
+    L:[['Inglaterra','Croacia'],['Ghana','Panamá'],['Inglaterra','Ghana'],['Panamá','Croacia'],['Panamá','Inglaterra'],['Croacia','Ghana']],
+  }
+
+  // Header
+  doc.setFillColor(34, 34, 34)
+  doc.rect(0, 0, 210, 20, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(12)
+  doc.setFont('helvetica', 'bold')
+  doc.text('PRODE MUNDIAL 2026 — MIS PRONÓSTICOS', 105, 8, { align: 'center' })
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`${player.team_name}  (${player.name})  ·  Generado: ${new Date().toLocaleDateString('es-AR')}`, 105, 14, { align: 'center' })
+
+  doc.setTextColor(0, 0, 0)
+
+  let y = 26
+  const colW = 90
+  const rowH = 5.5
+  let col = 0
+
+  GROUPS.forEach(g => {
+    const x = col === 0 ? 10 : 110
+
+    // Group header
+    doc.setFillColor(50, 50, 50)
+    doc.rect(x, y-4, colW, 5.5, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'bold')
+    doc.text(`GRUPO ${g}`, x+2, y)
+    doc.setTextColor(0,0,0)
+
+    GROUP_DATA[g].forEach((match, i) => {
+      const key = g + i
+      const pred = predictions[key]
+      const isSaved = savedKeys.has(key)
+      const ry = y + 5 + i * rowH
+
+      // Alternating row bg
+      if (i % 2 === 0) {
+        doc.setFillColor(245, 245, 245)
+        doc.rect(x, ry-3.5, colW, rowH, 'F')
+      }
+
+      doc.setFontSize(6.5)
+      doc.setFont('helvetica', isSaved ? 'bold' : 'normal')
+      doc.setTextColor(isSaved ? 0 : 120, isSaved ? 0 : 120, isSaved ? 0 : 120)
+
+      // Local
+      doc.text(match[0], x+2, ry)
+
+      // Score or pending
+      if (pred) {
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(34, 100, 34)
+        doc.text(`${pred.l} - ${pred.v}`, x+colW/2, ry, { align: 'center' })
+      } else {
+        doc.setTextColor(180, 180, 180)
+        doc.text('- - -', x+colW/2, ry, { align: 'center' })
+      }
+
+      // Visitor
+      doc.setFont('helvetica', isSaved ? 'bold' : 'normal')
+      doc.setTextColor(isSaved ? 0 : 120, isSaved ? 0 : 120, isSaved ? 0 : 120)
+      doc.text(match[1], x+colW-2, ry, { align: 'right' })
+    })
+
+    y_after_group = y + 5 + 6 * rowH + 4
+
+    if (col === 0) {
+      col = 1
+    } else {
+      col = 0
+      y = y_after_group
+      if (y > 260) {
+        doc.addPage()
+        y = 15
+      }
+    }
+  })
+
+  // Footer
+  const pages = doc.getNumberOfPages()
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i)
+    doc.setFontSize(6)
+    doc.setTextColor(150,150,150)
+    doc.text('RECONTRAOFICIAL FIFA  ·  prode-2026-mmnl.vercel.app  ·  3 pts exacto / 1 pt ganador', 105, 290, { align: 'center' })
+  }
+
+  doc.save(`pronósticos_${player.team_name.replace(/\s/g,'_')}.pdf`)
+}
 const GROUP_KEYS = Object.keys(GROUPS)
 const PHASES = ['f1', 'f2', 'f3']
 const PHASE_LABELS = { f1: 'Fecha 1', f2: 'Fecha 2', f3: 'Fecha 3' }
@@ -328,7 +439,16 @@ export default function PronosticosTab({ player, onSaved }) {
           </div>
         </div>
       </div>
-
+{Object.keys(predictions).length > 0 && (
+  <div style={{padding:'8px 14px 0', flexShrink:0}}>
+    <button onClick={() => exportToPDF(player, predictions, savedKeys)}
+      style={{width:'100%', padding:'9px', background:'transparent',
+        border:'1px solid var(--bd2)', borderRadius:8, fontSize:12,
+        fontWeight:600, color:'var(--tx2)', cursor:'pointer', fontFamily:'inherit'}}>
+      📄 Descargar mis pronósticos en PDF
+    </button>
+  </div>
+)}
       {phaseOpen && !phaseSaved && (
         <div className="save-footer">
           <button className="btn" onClick={() => handleSave(activePhase)} disabled={saving}>
