@@ -89,7 +89,7 @@ console.log("PDF iniciado")
       doc.text(match[1], x+colW-2, ry, { align: 'right' })
     })
 
-    y_after_group = y + 5 + 6 * rowH + 4
+    const y_after_group = y + 5 + 6 * rowH + 4
 
     if (col === 0) {
       col = 1
