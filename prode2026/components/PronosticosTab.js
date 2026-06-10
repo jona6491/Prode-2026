@@ -4,6 +4,7 @@ import { GROUPS, PHASE_MATCHES, flagUrl, calcStandings, isPhaseOpen, getDeadline
 
 // Export PDF function - runs entirely in browser
 async function exportToPDF(player, predictions, savedKeys) {
+console.log("PDF iniciado")
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   
