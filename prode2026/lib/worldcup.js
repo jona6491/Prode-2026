@@ -35,7 +35,7 @@ export function getPhaseLabel(phase) {
 }
 
 export function getDeadlineText(phase) {
-  if (phase === 'f1') return 'Miércoles 11 de Junio — 15:30hs'
+  if (phase === 'f1') return 'Jueves 11 de Junio — 15:30hs'
   if (phase === 'f2') return 'Miércoles 18 de Junio — 12:30hs'
   if (phase === 'f3') return 'Miércoles 24 de Junio — 15:30hs'
   return ''
