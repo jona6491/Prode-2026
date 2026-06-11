@@ -1,8 +1,17 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { scorePoints, GROUPS, flagUrl } from '../lib/worldcup'
+import { scorePoints, GROUPS, flagUrl, PHASE_MATCHES, isPhaseOpen } from '../lib/worldcup'
 
 const GROUP_KEYS = Object.keys(GROUPS)
+const PHASES = ['f1', 'f2', 'f3']
+
+function canShowPrediction(matchKey) {
+  return PHASES.some(phase => PHASE_MATCHES[phase].includes(matchKey) && !isPhaseOpen(phase))
+}
+
+function getVisibleMatchKeys() {
+  return PHASES.flatMap(phase => isPhaseOpen(phase) ? [] : PHASE_MATCHES[phase])
+}
 
 export default function RankingTab({ player, transparencyEnabled: transparencyProp }) {
   const [players, setPlayers] = useState([])
@@ -66,7 +75,10 @@ export default function RankingTab({ player, transparencyEnabled: transparencyPr
   async function viewPlayerPredictions(p) {
     if (viewingPlayer?.id === p.id) { setViewingPlayer(null); return }
     setViewLoading(true); setViewingPlayer(p)
-    const { data } = await supabase.from('predictions').select('*').eq('player_id', p.id)
+    const visibleMatchKeys = getVisibleMatchKeys()
+    const { data } = visibleMatchKeys.length > 0
+      ? await supabase.from('predictions').select('*').eq('player_id', p.id).in('match_key', visibleMatchKeys)
+      : { data: [] }
     const map = {}
     if (data) data.forEach(d => { map[d.match_key] = { l: d.goals_local, v: d.goals_visitor } })
     setViewPredictions(map); setSelGrp('A'); setViewLoading(false)
@@ -107,9 +119,10 @@ export default function RankingTab({ player, transparencyEnabled: transparencyPr
                   {grpData.matches.map((match, i) => {
                     const key = selGrp + i
                     const pred = viewPredictions[key]
+                    const showPrediction = canShowPrediction(key)
                     const real = results[key]
                     let rowBg = 'transparent'
-                    if (pred && real) {
+                    if (showPrediction && pred && real) {
                       const score = scorePoints({l:pred.l,v:pred.v}, real, real.double)
                       if (score.type==='pleno') rowBg='rgba(34,201,138,0.1)'
                       else if (score.type==='parcial') rowBg='rgba(96,165,250,0.1)'
@@ -122,15 +135,15 @@ export default function RankingTab({ player, transparencyEnabled: transparencyPr
                           <span className="mnm">{match[0]}</span><span className="mdate">{match[2]}</span>
                         </div>
                         <div className="sbox">
-                          <div className="lkd">{pred?pred.l:'?'}</div>
+                          <div className="lkd">{showPrediction && pred ? pred.l : '?'}</div>
                           <span className="sdash">-</span>
-                          <div className="lkd">{pred?pred.v:'?'}</div>
+                          <div className="lkd">{showPrediction && pred ? pred.v : '?'}</div>
                         </div>
                         <div className="mteam">
                           {flagUrl(match[1])?<img src={flagUrl(match[1])} className="mflag" alt={match[1]}/>:<span style={{fontSize:20}}>🏳</span>}
                           <span className="mnm">{match[1]}</span>
                         </div>
-                        {real && pred && (
+                        {showPrediction && real && pred && (
                           <div style={{fontSize:10,minWidth:44,textAlign:'center',color:
                             scorePoints({l:pred.l,v:pred.v},real,real.double).type==='pleno'?'var(--em)':
                             scorePoints({l:pred.l,v:pred.v},real,real.double).type==='parcial'?'var(--blue)':'var(--red)'}}>
@@ -199,7 +212,7 @@ export default function RankingTab({ player, transparencyEnabled: transparencyPr
                   {p.team_name}
                   {isMe&&<span style={{fontSize:10,color:'var(--em)',marginLeft:6}}>(vos)</span>}
                   {!isSaved&&<span style={{fontSize:10,color:'var(--tx3)',marginLeft:6}}>· pendiente</span>}
-                  {transparencyEnabled&&isSaved&&<span style={{fontSize:10,color:'var(--tx3)',marginLeft:6}}>· ver →</span>}
+                  {transparencyEnabled&&isSaved&&<span style={{fontSize:10,color:'var(--tx2)',fontWeight:600,marginLeft:6,textTransform:'uppercase'}}>· 👁️ Ver →</span>}
                 </div>
                 <div className="rk-unm">
                   {isSaved
