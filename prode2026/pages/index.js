@@ -239,7 +239,6 @@ function AdminPanel({ onClose, currentPlayer, transparencyEnabled, setTransparen
     .eq('id', 1)
     .select()
 
-  console.log('UPDATE TRANSPARENCIA', { data, error, newVal })
 
   setTransparencyEnabled(newVal)
   setTogglingTransparency(false)
