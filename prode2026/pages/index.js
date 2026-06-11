@@ -22,6 +22,11 @@ export default function Home() {
   const [showAdminPanel, setShowAdminPanel] = useState(false)
   const [transparencyEnabled, setTransparencyEnabled] = useState(false)
 
+useEffect(() => {
+  supabase.from('admin_config').select('transparency_enabled').eq('id',1).single()
+    .then(({ data }) => { if (data) setTransparencyEnabled(data.transparency_enabled) })
+}, [])
+
   useEffect(() => {
     const savedPlayer = localStorage.getItem('prode_player')
     const savedKeyId = localStorage.getItem('prode_key_id')
