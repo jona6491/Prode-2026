@@ -17,13 +17,12 @@ export default function RankingTab({ player, transparencyEnabled: transparencyPr
   const [players, setPlayers] = useState([])
   const [results, setResults] = useState({})
   const [loading, setLoading] = useState(true)
-  const [transparencyEnabled, setTransparencyEnabled] = useState(transparencyProp || false)
+  const [transparencyEnabled, setTransparencyEnabled] = useState(false)
   const [viewingPlayer, setViewingPlayer] = useState(null)
   const [viewPredictions, setViewPredictions] = useState({})
   const [viewLoading, setViewLoading] = useState(false)
   const [selGrp, setSelGrp] = useState('A')
 
-  useEffect(() => { setTransparencyEnabled(transparencyProp) }, [transparencyProp])
 
   useEffect(() => {
     loadRanking()
