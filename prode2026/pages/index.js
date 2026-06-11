@@ -229,12 +229,20 @@ function AdminPanel({ onClose, currentPlayer, transparencyEnabled, setTransparen
   }
 
   async function toggleTransparency() {
-    setTogglingTransparency(true)
-    const newVal = !transparencyEnabled
-    await supabase.from('admin_config').update({ transparency_enabled: newVal }).eq('id', 1)
-    setTransparencyEnabled(newVal)
-    setTogglingTransparency(false)
-  }
+  setTogglingTransparency(true)
+
+  const newVal = !transparencyEnabled
+
+  const { data, error } = await supabase
+    .from('admin_config')
+    .update({ transparency_enabled: newVal })
+    .eq('id', 1)
+
+  console.log('UPDATE TRANSPARENCIA', { data, error, newVal })
+
+  setTransparencyEnabled(newVal)
+  setTogglingTransparency(false)
+}
 
   async function deletePlayer(p) {
     if (!confirm(`¿Borrar "${p.team_name}" (${p.name})?\nSu clave quedará libre nuevamente.`)) return
