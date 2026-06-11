@@ -237,6 +237,7 @@ function AdminPanel({ onClose, currentPlayer, transparencyEnabled, setTransparen
     .from('admin_config')
     .update({ transparency_enabled: newVal })
     .eq('id', 1)
+    .select()
 
   console.log('UPDATE TRANSPARENCIA', { data, error, newVal })
 
