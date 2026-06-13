@@ -57,6 +57,7 @@ export default function ResultadosTab({ adminUnlocked }) {
     try {
       const res = await fetch('/api/sync-results', { method: 'POST' })
       const data = await res.json()
+      console.log('RESPUESTA API', data)
       if (res.ok) {
         setSyncMsg({ ok: true, text: `✅ ${data.synced} resultado${data.synced !== 1 ? 's' : ''} sincronizado${data.synced !== 1 ? 's' : ''}${data.skipped > 0 ? ` · ${data.skipped} salteado${data.skipped !== 1 ? 's' : ''}` : ''}` })
         await loadResults()
