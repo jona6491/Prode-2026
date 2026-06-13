@@ -205,11 +205,13 @@ export default async function handler(req, res) {
       }
 
       const matchKey = getMatchKey(homeTeam, awayTeam)
-      if (!matchKey) {
-        errors.push(`No se encontró match_key para: ${homeTeam} vs ${awayTeam}`)
-        skipped++
-        continue
-      }
+  if (!matchKey) {
+  const msg = `No se encontró match_key para: ${homeTeam} vs ${awayTeam}`
+  console.log(msg)
+  errors.push(msg)
+  skipped++
+  continue
+}
 
       const groupKey = getGroupKey(matchKey)
       const matchIndex = getMatchIndex(matchKey)
@@ -228,10 +230,13 @@ export default async function handler(req, res) {
         }, { onConflict: 'match_key' })
 
       if (error) {
-        errors.push(`Error guardando ${matchKey}: ${error.message}`)
-      } else {
-        synced++
-      }
+  const msg = `Error guardando ${matchKey}: ${error.message}`
+  console.log(msg)
+  errors.push(msg)
+} else {
+  console.log(`Sincronizado: ${matchKey}`)
+  synced++
+}
     }
 
     return res.status(200).json({
