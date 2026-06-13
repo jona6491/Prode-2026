@@ -252,12 +252,12 @@ for (const m of finished) {
           goals_visitor: goalsAway,
         }, { onConflict: 'match_key' })
 
-      if (error) {
-  const msg = `Error guardando ${matchKey}: ${error.message}`
-  console.log(msg)
-  errors.push(msg)
+     if (error) {
+  console.log(`ERROR ${matchKey}:`, error.message)
 } else {
-  console.log(`Sincronizado: ${matchKey}`)
+  console.log(
+    `OK ${matchKey}: ${homeTeam} ${goalsHome}-${goalsAway} ${awayTeam}`
+  )
   synced++
 }
     }
