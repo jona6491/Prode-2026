@@ -185,6 +185,16 @@ export default async function handler(req, res) {
     // Filter only finished matches
     const finished = matches.filter(m => m.status === 'FINISHED')
 
+return res.status(200).json({
+  finished: finished.map(m => ({
+    home: m.homeTeam?.name,
+    away: m.awayTeam?.name,
+    status: m.status,
+    homeGoals: m.score?.fullTime?.home,
+    awayGoals: m.score?.fullTime?.away
+  }))
+})
+
 console.log('PARTIDOS FINALIZADOS:')
 
 for (const m of finished) {
