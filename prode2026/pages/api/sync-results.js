@@ -185,6 +185,19 @@ export default async function handler(req, res) {
     // Filter only finished matches
     const finished = matches.filter(m => m.status === 'FINISHED')
 
+console.log('PARTIDOS FINALIZADOS:')
+
+for (const m of finished) {
+  console.log(
+    m.homeTeam?.name,
+    'vs',
+    m.awayTeam?.name,
+    '-',
+    m.score?.fullTime?.home,
+    ':',
+    m.score?.fullTime?.away
+  )
+}
     if (finished.length === 0) {
       return res.status(200).json({ message: 'No hay partidos finalizados aún', synced: 0 })
     }
