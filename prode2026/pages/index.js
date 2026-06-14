@@ -83,7 +83,33 @@ useEffect(() => {
       setAdminUnlocked(true); setShowAdminModal(false); setTab('admin')
     } else { alert('Clave admin incorrecta.') }
   }
+async function trackVisit(playerId) {
+  if (!playerId) return
 
+  const { data } = await supabase
+    .from('player_activity')
+    .select('visit_count')
+    .eq('player_id', playerId)
+    .maybeSingle()
+
+  if (data) {
+    await supabase
+      .from('player_activity')
+      .update({
+        visit_count: data.visit_count + 1,
+        last_seen: new Date().toISOString()
+      })
+      .eq('player_id', playerId)
+  } else {
+    await supabase
+      .from('player_activity')
+      .insert({
+        player_id: playerId,
+        visit_count: 1,
+        last_seen: new Date().toISOString()
+      })
+  }
+}
   if (screen === 'loading') return (
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',background:'#18191f',fontSize:40}}>⚽</div>
   )
