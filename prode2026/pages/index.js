@@ -5,6 +5,7 @@ import PronosticosTab from '../components/PronosticosTab'
 import RankingTab from '../components/RankingTab'
 import ReglasTab from '../components/ReglasTab'
 import ResultadosTab from '../components/ResultadosTab'
+import TablasTab from '../components/TablasTab'
 
 export default function Home() {
   const [screen, setScreen] = useState('loading')
