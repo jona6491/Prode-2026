@@ -214,12 +214,14 @@ async function trackVisit(playerId) {
               <button className={`ntab ${tab==='pronosticos'?'active':''}`} onClick={()=>setTab('pronosticos')}>✏️ Pronósticos</button>
               <button className={`ntab ${tab==='resultados'?'active':''}`} onClick={()=>setTab('resultados')}>⚽ Resultados</button>
               <button className={`ntab ${tab==='ranking'?'active':''}`} onClick={()=>setTab('ranking')}>📊 Ranking</button>
+              <button className={`ntab ${tab==='tablas'?'active':''}`} onClick={()=>setTab('tablas')}>🏆 Tablas</button>
               <button className={`ntab ${tab==='reglas'?'active':''}`} onClick={()=>setTab('reglas')}>📋 Reglas</button>
               {adminUnlocked && <button className={`ntab ${tab==='admin'?'active':''}`} onClick={()=>setTab('admin')}>⚙️ Admin</button>}
             </div>
             {tab==='pronosticos' && <PronosticosTab player={player} onSaved={p=>{setPlayer(p);localStorage.setItem('prode_player',JSON.stringify(p))}} />}
             {tab==='resultados' && <ResultadosTab adminUnlocked={adminUnlocked} />}
             {tab==='ranking' && <RankingTab player={player} transparencyEnabled={transparencyEnabled} />}
+            {tab==='tablas' && <TablasTab />}
             {tab==='reglas' && <ReglasTab />}
              <div style={{padding:'10px 14px',textAlign:'center',fontSize:11,color:'var(--tx3)',borderTop:'1px solid var(--bd)',flexShrink:0}}>
   ⚽ Mundial 2026 · RECONTRAOFICIAL FIFA · 11 Jun — 27 Jun 2026
