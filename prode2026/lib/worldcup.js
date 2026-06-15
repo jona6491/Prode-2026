@@ -86,7 +86,7 @@ export const GROUPS = {
   I:{teams:['Francia','Senegal','Noruega','Iraq'],
     matches:[['Francia','Senegal','16 Jun 16:00'],['Iraq','Noruega','16 Jun 19:00'],['Francia','Iraq','22 Jun 18:00'],['Noruega','Senegal','22 Jun 21:00'],['Noruega','Francia','27 Jun'],['Senegal','Iraq','27 Jun']]},
   J:{teams:['Argentina','Argelia','Austria','Jordania'],
-    matches:[['Argentina','Argelia','16 Jun 22:00'],['Austria','Jordania','16 Jun 01:00'],['Argentina','Austria','22 Jun 14:00'],['Jordania','Argelia','22 Jun 00:00'],['Argelia','Austria','27 Jun'],['Jordania','Argentina','27 Jun 23:00']]},
+    matches:[['Argentina','Argelia','16 Jun 22:00'],['Austria','Jordania','17 Jun 01:00'],['Argentina','Austria','22 Jun 14:00'],['Jordania','Argelia','22 Jun 00:00'],['Argelia','Austria','27 Jun'],['Jordania','Argentina','27 Jun 23:00']]},
   K:{teams:['Portugal','RD del Congo','Uzbekistán','Colombia'],
     matches:[['Portugal','RD del Congo','17 Jun 14:00'],['Uzbekistán','Colombia','17 Jun 23:00'],['Portugal','Uzbekistán','23 Jun 14:00'],['Colombia','RD del Congo','23 Jun 23:00'],['Colombia','Portugal','27 Jun 20:30'],['RD del Congo','Uzbekistán','27 Jun 20:30']]},
   L:{teams:['Inglaterra','Croacia','Ghana','Panamá'],
