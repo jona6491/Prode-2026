@@ -32,7 +32,7 @@ const TEAM_NAME_MAP = {
   'Turkey': 'Turquía',
   'Germany': 'Alemania',
   'Ecuador': 'Ecuador',
-  "Ivory Coast': 'Costa de Marfil',
+  'Ivory Coast': 'Costa de Marfil',
   'Curaçao': 'Curazao',
   'Netherlands': 'Países Bajos',
   'Japan': 'Japón',
