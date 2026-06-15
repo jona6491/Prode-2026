@@ -24,16 +24,14 @@ export default function RankingTab({ player, transparencyEnabled: transparencyPr
   const [selGrp, setSelGrp] = useState('A')
 
 
-  useEffect(() => {
-    loadRanking()
-    async function checkTransparency() {
-      const { data } = await supabase.from('admin_config').select('transparency_enabled').eq('id',1).single()
-      if (data) setTransparencyEnabled(data.transparency_enabled)
-    }
-    checkTransparency()
-    const interval = setInterval(() => { loadRanking(); checkTransparency() }, 15000)
-    return () => clearInterval(interval)
-  }, [])
+useEffect(() => {
+  loadRanking()
+  async function checkTransparency() {
+    const { data } = await supabase.from('admin_config').select('transparency_enabled').eq('id',1).single()
+    if (data) setTransparencyEnabled(data.transparency_enabled)
+  }
+  checkTransparency()
+}, [])
 
   async function loadRanking() {
     setLoading(true)
@@ -183,10 +181,10 @@ export default function RankingTab({ player, transparencyEnabled: transparencyPr
         </div>
       )}
       {playedMatches>0 && (
-        <div style={{fontSize:11,color:'var(--tx3)',marginBottom:10,textAlign:'center'}}>
-          {playedMatches} partido{playedMatches!==1?'s':''} jugado{playedMatches!==1?'s':''} · Se actualiza cada 15s
-        </div>
-      )}
+  <div style={{fontSize:11,color:'var(--tx3)',marginBottom:10,textAlign:'center'}}>
+    {playedMatches} partido{playedMatches!==1?'s':''} jugado{playedMatches!==1?'s':''}
+  </div>
+)}
 
       <div className="rk-tbl">
         <div className="rk-head">
