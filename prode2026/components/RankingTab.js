@@ -132,10 +132,24 @@ useEffect(() => {
                           <span className="mnm">{match[0]}</span><span className="mdate">{match[2]}</span>
                         </div>
                         <div className="sbox">
-                          <div className="lkd">{showPrediction && pred ? pred.l : '?'}</div>
-                          <span className="sdash">-</span>
-                          <div className="lkd">{showPrediction && pred ? pred.v : '?'}</div>
-                        </div>
+  <div className="lkd">{showPrediction && pred ? pred.l : '?'}</div>
+  <span className="sdash">-</span>
+  <div className="lkd">{showPrediction && pred ? pred.v : '?'}</div>
+
+  {real && (
+    <div
+      style={{
+        width: '100%',
+        textAlign: 'center',
+        fontSize: 11,
+        color: 'var(--tx3)',
+        marginTop: 2
+      }}
+    >
+      {real.l} - {real.v}
+    </div>
+  )}
+</div>
                         <div className="mteam">
                           {flagUrl(match[1])?<img src={flagUrl(match[1])} className="mflag" alt={match[1]}/>:<span style={{fontSize:20}}>🏳</span>}
                           <span className="mnm">{match[1]}</span>
