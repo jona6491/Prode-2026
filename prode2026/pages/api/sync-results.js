@@ -55,7 +55,7 @@ const TEAM_NAME_MAP = {
   'Austria': 'Austria',
   'Jordan': 'Jordania',
   'Portugal': 'Portugal',
-  'DR Congo': 'RD del Congo',
+  'Congo DR': 'RD del Congo',
   'Uzbekistan': 'Uzbekistán',
   'Colombia': 'Colombia',
   'England': 'Inglaterra',
