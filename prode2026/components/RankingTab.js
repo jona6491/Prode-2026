@@ -182,10 +182,18 @@ useEffect(() => {
           ⏳ Los puntos se actualizarán cuando el organizador cargue los resultados.
         </div>
       )}
-      {playedMatches>0 && (
-  <div style={{fontSize:11,color:'var(--tx3)',marginBottom:10,textAlign:'center'}}>
-    {playedMatches} partido{playedMatches!==1?'s':''} jugado{playedMatches!==1?'s':''}
-  </div>
+     {playedMatches>0 && (
+  <>
+    <div style={{fontSize:11,color:'var(--tx3)',marginBottom:4,textAlign:'center'}}>
+      Van {playedMatches} partidos · Quedan {72 - playedMatches}
+    </div>
+
+    {savedPlayers.length > 0 && (
+      <div style={{fontSize:11,color:'var(--tx3)',marginBottom:10,textAlign:'center'}}>
+         Felicitaciones CAMPEÓN! {savedPlayers[0].team_name} 🏆
+      </div>
+    )}
+  </>
 )}
 
       <div className="rk-tbl">
