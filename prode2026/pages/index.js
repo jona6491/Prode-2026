@@ -22,10 +22,17 @@ export default function Home() {
   const [adminCode, setAdminCode] = useState('')
   const [showAdminPanel, setShowAdminPanel] = useState(false)
   const [transparencyEnabled, setTransparencyEnabled] = useState(false)
+  const [showReminder, setShowReminder] = useState(false)
 
 useEffect(() => {
   supabase.from('admin_config').select('transparency_enabled').eq('id',1).single()
     .then(({ data }) => { if (data) setTransparencyEnabled(data.transparency_enabled) })
+}, [])
+  useEffect(() => {
+  const closed = localStorage.getItem('f3_notice_closed')
+  if (!closed) {
+    setShowReminder(true)
+  }
 }, [])
 
   useEffect(() => {
@@ -77,6 +84,10 @@ useEffect(() => {
     setPlayer(null); setKeyId(null); setClave(''); setNombre(''); setEquipo('')
     setScreen('login'); setTab('pronosticos'); setAdminUnlocked(false); setShowAdminPanel(false)
   }
+  function closeReminder() {
+  localStorage.setItem('f3_notice_closed', 'true')
+  setShowReminder(false)
+}
 
   async function handleAdminUnlock() {
     const { data } = await supabase.from('admin_config').select('admin_code').eq('id', 1).single()
