@@ -139,14 +139,15 @@ async function trackVisit(playerId) {
   {showReminder && (
     <div
       style={{
-        background:'#23262f',
-        border:'1px solid #3a3d47',
+        background:'rgba(255, 193, 7, 0.12)',
+        border:'1px solid #ffc107',
         borderRadius:10,
         padding:'12px 14px',
         marginBottom:12,
         position:'relative',
-        fontSize:13,
-        color:'#ddd'
+        fontSize:14,
+        fontWeight:700,
+        color:'#ffc107'
       }}
     >
       <button
@@ -166,7 +167,7 @@ async function trackVisit(playerId) {
       </button>
 
       <div style={{paddingRight:20}}>
-        ⚠️ No te olvides: el miércoles 24 a las 15:30 hs cierra la carga de pronósticos de la Fecha 3.
+        ⚠️ NO TE OLVIDES: el miércoles 24 a las 15:30 hs cierra la carga de pronósticos de la Fecha 3.
       </div>
 
       <div style={{marginTop:10,textAlign:'right'}}>
