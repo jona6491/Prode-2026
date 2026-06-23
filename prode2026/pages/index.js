@@ -133,9 +133,59 @@ async function trackVisit(playerId) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#18191f" />
         <link rel="icon" href="/TROFEO.png" />
-      </Head>
-      <div className="wrap">
-        <div className="hdr">
+     </Head>
+<div className="wrap">
+
+  {showReminder && (
+    <div
+      style={{
+        background:'#23262f',
+        border:'1px solid #3a3d47',
+        borderRadius:10,
+        padding:'12px 14px',
+        marginBottom:12,
+        position:'relative',
+        fontSize:13,
+        color:'#ddd'
+      }}
+    >
+      <button
+        onClick={closeReminder}
+        style={{
+          position:'absolute',
+          right:10,
+          top:8,
+          background:'none',
+          border:'none',
+          color:'#aaa',
+          cursor:'pointer',
+          fontSize:16
+        }}
+      >
+        ✕
+      </button>
+
+      <div style={{paddingRight:20}}>
+        ⚠️ No te olvides: el miércoles 24 a las 15:30 hs cierra la carga de pronósticos de la Fecha 3.
+      </div>
+
+      <div style={{marginTop:10,textAlign:'right'}}>
+        <button
+          onClick={closeReminder}
+          style={{
+            padding:'6px 12px',
+            borderRadius:6,
+            border:'none',
+            cursor:'pointer'
+          }}
+        >
+          Entendido
+        </button>
+      </div>
+    </div>
+  )}
+
+  <div className="hdr">
           <img src="/TROFEO.png" style={{width:34,height:34,objectFit:'contain'}} alt="trofeo" />
           <div style={{flex:1}}>
             <div className="hdr-title">Prode Mundial 2026</div>
