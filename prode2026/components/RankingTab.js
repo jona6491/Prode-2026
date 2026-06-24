@@ -189,7 +189,7 @@ useEffect(() => {
     </div>
 
     {savedPlayers.length > 0 && (
-      <div style={{fontSize:11,color:'var(--tx3)',marginBottom:10,textAlign:'center'}}>
+      <div style={{fontSize:13,color:'var(--tx3)',marginBottom:10,textAlign:'center'}}>
          Felicitaciones CAMPEÓN! {savedPlayers[0].team_name} 🏆
       </div>
     )}
