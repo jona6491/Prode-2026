@@ -111,6 +111,19 @@ export default function ResultadosTab({ adminUnlocked }) {
               fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:8}}>
             {syncing ? '⏳ Sincronizando...' : '🔄 Sincronizar resultados con API'}
           </button>
+{lastSync && (
+  <div
+    style={{
+      marginTop: 6,
+      fontSize: 12,
+      color: 'var(--tx2)',
+      textAlign: 'center'
+    }}
+  >
+    🕒 Última sincronización:{" "}
+    {new Date(lastSync).toLocaleString("es-AR")}
+  </div>
+)}
           {syncMsg && (
             <div style={{marginTop:6, padding:'8px 12px', borderRadius:8, fontSize:12,
               background: syncMsg.ok ? 'var(--em-bg)' : 'rgba(239,83,80,0.1)',
