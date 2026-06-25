@@ -14,17 +14,42 @@ export default function ResultadosTab({ adminUnlocked }) {
   const [saving, setSaving] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [syncMsg, setSyncMsg] = useState(null)
+  const [lastSync, setLastSync] = useState(null)
 
   useEffect(() => { loadResults() }, [])
 
   async function loadResults() {
-    setLoading(true)
-    const { data } = await supabase.from('match_results').select('*')
-    const map = {}
-    if (data) data.forEach(r => { map[r.match_key] = { l: r.goals_local, v: r.goals_visitor } })
-    setResults(map)
-    setLoading(false)
+  setLoading(true)
+
+  const { data } = await supabase
+    .from('match_results')
+    .select('*')
+
+  const map = {}
+  if (data) {
+    data.forEach(r => {
+      map[r.match_key] = {
+        l: r.goals_local,
+        v: r.goals_visitor
+      }
+    })
   }
+
+  setResults(map)
+
+  // Leer última sincronización
+  const { data: admin } = await supabase
+    .from('admin_config')
+    .select('last_sync_at')
+    .eq('id', 1)
+    .single()
+
+  if (admin) {
+    setLastSync(admin.last_sync_at)
+  }
+
+  setLoading(false)
+}
 
   async function saveResult(grp, idx, match) {
     if (editL === '' || editV === '') return
