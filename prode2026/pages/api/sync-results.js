@@ -184,6 +184,18 @@ export default async function handler(req, res) {
 
     // Filter only finished matches
     const finished = matches.filter(m => m.status === 'FINISHED')
+    // Obtener partidos ya sincronizados
+const { data: existingResults, error: existingError } = await supabase
+  .from('match_results')
+  .select('match_key')
+
+if (existingError) {
+  return res.status(500).json({ error: existingError.message })
+}
+
+const existingKeys = new Set(
+  (existingResults || []).map(r => r.match_key)
+)
 
 console.log('PARTIDOS FINALIZADOS:')
 
@@ -218,7 +230,8 @@ for (const m of finished) {
       }
 
       const matchKey = getMatchKey(homeTeam, awayTeam)
-  if (!matchKey) {
+
+if (!matchKey) {
   const msg = `No se encontró match_key para: ${homeTeam} vs ${awayTeam}`
   console.log(msg)
   errors.push(msg)
@@ -226,8 +239,15 @@ for (const m of finished) {
   continue
 }
 
-      const groupKey = getGroupKey(matchKey)
-      const matchIndex = getMatchIndex(matchKey)
+// Si ya existe en la base, lo salteamos
+if (existingKeys.has(matchKey)) {
+  console.log(`SKIP ${matchKey}: ya sincronizado`)
+  skipped++
+  continue
+}
+
+const groupKey = getGroupKey(matchKey)
+const matchIndex = getMatchIndex(matchKey)
 
       // Upsert into match_results
       const { error } = await supabase
