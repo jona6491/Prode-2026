@@ -271,7 +271,12 @@ const matchIndex = getMatchIndex(matchKey)
   synced++
 }
     }
-
+await supabase
+  .from('admin_config')
+  .update({
+    last_sync_at: new Date().toISOString()
+  })
+  .eq('id', 1)
     return res.status(200).json({
       message: `Sincronización completada`,
       synced,
