@@ -158,10 +158,9 @@ function getMatchIndex(matchKey) {
   return matchKey ? parseInt(matchKey[1]) : null
 }
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
+if (req.method !== 'GET' && req.method !== 'POST') {
+  return res.status(405).json({ error: 'Method not allowed' })
+}
 
   if (!FOOTBALL_API_KEY) {
     return res.status(500).json({ error: 'API key no configurada en variables de entorno' })
