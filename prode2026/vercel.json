@@ -2,7 +2,19 @@
   "crons": [
     {
       "path": "/api/sync-results",
-      "schedule": "5,15,30 0 * * *"
+      "schedule": "15 19 * * *"
+    },
+    {
+      "path": "/api/sync-results",
+      "schedule": "15 22 * * *"
+    },
+    {
+      "path": "/api/sync-results",
+      "schedule": "45 1 * * *"
+    },
+    {
+      "path": "/api/sync-results",
+      "schedule": "45 2 * * *"
     }
   ]
 }
