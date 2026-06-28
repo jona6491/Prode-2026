@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { GROUPS, flagUrl } from '../lib/worldcup'
+import { StageSwitch, KnockoutResults } from './KnockoutTab'
 
 const GROUP_KEYS = Object.keys(GROUPS)
 
 export default function ResultadosTab({ adminUnlocked }) {
+  const [competitionStage, setCompetitionStage] = useState('knockout')
   const [results, setResults] = useState({})
   const [loading, setLoading] = useState(true)
   const [selGrp, setSelGrp] = useState('A')
@@ -14,42 +16,17 @@ export default function ResultadosTab({ adminUnlocked }) {
   const [saving, setSaving] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [syncMsg, setSyncMsg] = useState(null)
-  const [lastSync, setLastSync] = useState(null)
 
   useEffect(() => { loadResults() }, [])
 
   async function loadResults() {
-  setLoading(true)
-
-  const { data } = await supabase
-    .from('match_results')
-    .select('*')
-
-  const map = {}
-  if (data) {
-    data.forEach(r => {
-      map[r.match_key] = {
-        l: r.goals_local,
-        v: r.goals_visitor
-      }
-    })
+    setLoading(true)
+    const { data } = await supabase.from('match_results').select('*')
+    const map = {}
+    if (data) data.forEach(r => { map[r.match_key] = { l: r.goals_local, v: r.goals_visitor } })
+    setResults(map)
+    setLoading(false)
   }
-
-  setResults(map)
-
-  // Leer última sincronización
-  const { data: admin } = await supabase
-    .from('admin_config')
-    .select('last_sync_at')
-    .eq('id', 1)
-    .single()
-
-  if (admin) {
-    setLastSync(admin.last_sync_at)
-  }
-
-  setLoading(false)
-}
 
   async function saveResult(grp, idx, match) {
     if (editL === '' || editV === '') return
@@ -82,7 +59,6 @@ export default function ResultadosTab({ adminUnlocked }) {
     try {
       const res = await fetch('/api/sync-results', { method: 'POST' })
       const data = await res.json()
-      console.log('RESPUESTA API', data)
       if (res.ok) {
         setSyncMsg({ ok: true, text: `✅ ${data.synced} resultado${data.synced !== 1 ? 's' : ''} sincronizado${data.synced !== 1 ? 's' : ''}${data.skipped > 0 ? ` · ${data.skipped} salteado${data.skipped !== 1 ? 's' : ''}` : ''}` })
         await loadResults()
@@ -98,8 +74,16 @@ export default function ResultadosTab({ adminUnlocked }) {
   const totalPlayed = Object.keys(results).length
   const grpData = GROUPS[selGrp]
 
+  if (competitionStage === 'knockout') return (
+    <div style={{display:'flex', flexDirection:'column', flex:1, minHeight:0}}>
+      <StageSwitch value={competitionStage} onChange={setCompetitionStage} />
+      <KnockoutResults adminUnlocked={adminUnlocked} />
+    </div>
+  )
+
   return (
     <div style={{display:'flex', flexDirection:'column', flex:1}}>
+      <StageSwitch value={competitionStage} onChange={setCompetitionStage} />
       {adminUnlocked && (
         <div style={{margin:'10px 14px 0', flexShrink:0}}>
           <div className="info-bar ok" style={{marginBottom:8}}>
@@ -111,19 +95,6 @@ export default function ResultadosTab({ adminUnlocked }) {
               fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:8}}>
             {syncing ? '⏳ Sincronizando...' : '🔄 Sincronizar resultados con API'}
           </button>
-{lastSync && (
-  <div
-    style={{
-      marginTop: 6,
-      fontSize: 12,
-      color: 'var(--tx2)',
-      textAlign: 'center'
-    }}
-  >
-    🕒 Última sincronización:{" "}
-    {new Date(lastSync).toLocaleString("es-AR")}
-  </div>
-)}
           {syncMsg && (
             <div style={{marginTop:6, padding:'8px 12px', borderRadius:8, fontSize:12,
               background: syncMsg.ok ? 'var(--em-bg)' : 'rgba(239,83,80,0.1)',
