@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { GROUPS, PHASE_MATCHES, flagUrl, calcStandings, isPhaseOpen, getDeadlineText } from '../lib/worldcup'
+import { StageSwitch, KnockoutPredictions } from './KnockoutTab'
 
 // Export PDF function - runs entirely in browser
 async function exportToPDF(player, predictions, savedKeys) {
@@ -119,6 +120,7 @@ const PHASES = ['f1', 'f2', 'f3']
 const PHASE_LABELS = { f1: 'Fecha 1', f2: 'Fecha 2', f3: 'Fecha 3' }
 
 export default function PronosticosTab({ player, onSaved }) {
+  const [competitionStage, setCompetitionStage] = useState('knockout')
   const [selGrp, setSelGrp] = useState('A')
   const [predictions, setPredictions] = useState({})
   const [saving, setSaving] = useState(false)
@@ -129,6 +131,9 @@ export default function PronosticosTab({ player, onSaved }) {
   })
   // savedKeys tracks which match_keys are already in DB
   const [savedKeys, setSavedKeys] = useState(new Set())
+  const [savedPredictions, setSavedPredictions] = useState({})
+  const [editingKeys, setEditingKeys] = useState(new Set())
+  const [updatingKeys, setUpdatingKeys] = useState(new Set())
   const [activePhase, setActivePhase] = useState('f1')
   const inputRefs = useRef({})
 
@@ -150,14 +155,14 @@ export default function PronosticosTab({ player, onSaved }) {
         keys.add(d.match_key)
       })
       setPredictions(map)
+      setSavedPredictions(map)
       setSavedKeys(keys)
     }
   }
 
   function updatePred(grp, idx, side, val) {
     const key = grp + idx
-    // Can't edit already saved keys
-    if (savedKeys.has(key)) return
+    if (savedKeys.has(key) && !editingKeys.has(key)) return
     const num = val === '' ? '' : Math.max(0, Math.min(20, parseInt(val) || 0))
     setPredictions(prev => ({ ...prev, [key]: { ...(prev[key] || { l: '', v: '' }), [side]: num } }))
   }
@@ -226,6 +231,53 @@ export default function PronosticosTab({ player, onSaved }) {
     return GROUP_KEYS.filter(g => isGroupComplete(g, phase) && !isGroupSaved(g, phase))
   }
 
+  function startEdit(key) {
+    setEditingKeys(prev => new Set([...prev, key]))
+  }
+
+  function cancelEdit(key) {
+    setPredictions(prev => ({ ...prev, [key]: savedPredictions[key] }))
+    setEditingKeys(prev => {
+      const next = new Set(prev)
+      next.delete(key)
+      return next
+    })
+  }
+
+  async function saveEditedPrediction(grp, idx) {
+    const key = grp + idx
+    const pred = predictions[key]
+    if (!pred || pred.l === '' || pred.v === '') {
+      alert('Completá los dos goles antes de guardar.')
+      return
+    }
+
+    setUpdatingKeys(prev => new Set([...prev, key]))
+    const { error } = await supabase
+      .from('predictions')
+      .update({ goals_local: pred.l, goals_visitor: pred.v })
+      .eq('player_id', player.id)
+      .eq('match_key', key)
+
+    setUpdatingKeys(prev => {
+      const next = new Set(prev)
+      next.delete(key)
+      return next
+    })
+
+    if (error) {
+      alert('No se pudo modificar el pronóstico. Probablemente falta habilitar el permiso de edición en Supabase.')
+      return
+    }
+
+    setSavedPredictions(prev => ({ ...prev, [key]: { l: pred.l, v: pred.v } }))
+    setEditingKeys(prev => {
+      const next = new Set(prev)
+      next.delete(key)
+      return next
+    })
+  }
+
   async function handleSave(phase) {
     const completeGroups = newCompleteGroupsInPhase(phase)
     const incomplete = incompleteGroupsInPhase(phase)
@@ -286,8 +338,16 @@ export default function PronosticosTab({ player, onSaved }) {
   const savedInPhase = totalSavedInPhase(activePhase)
   const totalInPhase = phaseKeys.length
 
+  if (competitionStage === 'knockout') return (
+    <div style={{display:'flex', flexDirection:'column', flex:1, minHeight:0}}>
+      <StageSwitch value={competitionStage} onChange={setCompetitionStage} />
+      <KnockoutPredictions player={player} onSaved={onSaved} />
+    </div>
+  )
+
   return (
     <div style={{display:'flex', flexDirection:'column', flex:1}}>
+      <StageSwitch value={competitionStage} onChange={setCompetitionStage} />
       {/* Phase tabs */}
       <div style={{display:'flex', background:'var(--bg2)', borderBottom:'1px solid var(--bd)', flexShrink:0}}>
         {PHASES.map(ph => {
@@ -401,7 +461,9 @@ export default function PronosticosTab({ player, onSaved }) {
               if (!phaseKeys.includes(key)) return null
               const pred = predictions[key]
               const isSaved = savedKeys.has(key)
-              const locked = isSaved || !phaseOpen
+              const isEditing = editingKeys.has(key)
+              const updating = updatingKeys.has(key)
+              const locked = (isSaved && !isEditing) || !phaseOpen
               return (
                 <div key={key} className="mrow" style={{opacity: locked && !isSaved ? 0.6 : 1}}>
                   <div className="mteam">
@@ -434,6 +496,21 @@ export default function PronosticosTab({ player, onSaved }) {
                     {flagUrl(match[1])?<img src={flagUrl(match[1])} className="mflag" alt={match[1]}/>:<span style={{fontSize:20}}>🏳</span>}
                     <span className="mnm">{match[1]}</span>
                   </div>
+                  {isSaved && phaseOpen && (
+                    <div style={{display:'flex',gap:6,alignItems:'center',justifyContent:'center',minWidth:58}}>
+                      {isEditing ? (
+                        <>
+                          <button className="btn-sm" onClick={() => saveEditedPrediction(selGrp, i)} disabled={updating}
+                            style={{fontSize:11,padding:'4px 7px'}}>{updating?'...':'✓'}</button>
+                          <button onClick={() => cancelEdit(key)} disabled={updating}
+                            style={{background:'transparent',border:'none',color:'var(--tx3)',cursor:updating?'default':'pointer',fontSize:16,padding:'0 2px'}}>✕</button>
+                        </>
+                      ) : (
+                        <button className="btn-sm" onClick={() => startEdit(key)}
+                          style={{fontSize:11,padding:'4px 8px'}} title="Modificar pronóstico">✏️</button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )
             })}
